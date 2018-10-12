@@ -1,2 +1,11 @@
-# lintcode-solutions
-Most of those solutions is at the top of code length leadboard
+# 找工作资料
+
+一些个人在找工作期间整理好的资料。
+
+- 博客
+    - C++
+    - 算法
+    - 图形学
+- lintcode：lintcode 的一些题解，一般会有时间复杂度低和代码量少的两种解法
+- UVA-Judge：《算法竞赛入门经典》的题解
+

@@ -1,0 +1,147 @@
+---
+layout: post
+title: "图形渲染管线简介"
+date: 2018-09-09 22:04:59
+categories: 图形学
+img:
+---
+
+&emsp;&emsp;本文的目的是梳理一下渲染管线，本人还在打基础阶段，文中可能会有些许问题，望见谅。
+
+- [应用程序阶段 Application](#应用程序阶段-application)
+- [几何处理 Geometry Processing](#几何处理-geometry-processing)
+    - [顶点着色器 Vertex Shader](#顶点着色器-vertex-shader)
+        - [变换 Transformation](#变换-transformation)
+        - [投影 Projection](#投影-projection)
+    - [可选阶段 Optional Stage](#可选阶段-optional-stage)
+        - [表面细分 Tessellation](#表面细分-tessellation)
+        - [几何着色器 Geometry Shader](#几何着色器-geometry-shader)
+        - [流输出 Stream Output](#流输出-stream-output)
+    - [裁剪与屏幕映射 Clipping & Screen Mapping](#裁剪与屏幕映射-clipping--screen-mapping)
+- [光栅化阶段 The Rasterizer Stage](#光栅化阶段-the-rasterizer-stage)
+    - [三角形设定 Triangle Setup](#三角形设定-triangle-setup)
+    - [三角形遍历 Triangle Traversal](#三角形遍历-triangle-traversal)
+- [像素处理 Pixel Processing](#像素处理-pixel-processing)
+    - [像素着色器 Pixel Shader](#像素着色器-pixel-shader)
+    - [合并 Merging](#合并-merging)
+- [总结](#总结)
+
+
+&emsp;&emsp;图形渲染管线是连接起整个渲染领域的总线，大部分的渲染都是在图形管线上展开的。图形渲染管线又和 GPU 渲染管线紧密不可分。下图比较了 RTR 第四版与各种图形 API ，以及 GPU 渲染管线，不同的管线可能会在具体细节上划分与下图不同。下图中，绿色为可编程，黄色为可配置，红色为完全固定。文中主要按照 DX11 管线进行分步解说。
+
+![Pipeline](/images/in-post/pipeline.png)
+
+### 应用程序阶段 Application
+
+&emsp;&emsp;应用程序阶段主要靠 CPU 进行，基础任务是将这一帧更新的相机，图元和光照信息传到 GPU。
+
+&emsp;&emsp;CPU 还会处理应用程序逻辑，例如碰撞检测，纹理动画，几何变形等，还可以在 CPU 进行一些剔除，例如层次视锥剔除，减少 GPU 的负担。
+
+### 几何处理 Geometry Processing
+&emsp;&emsp;几何处理阶段的输入是顶点与图元的顶点索引，输出是屏幕空间的顶点。简单来说，几何阶段就是负责把顶点都转换到屏幕空间，以便光栅化阶段处理。下面是几何处理阶段的各个子阶段：
+
+|子阶段|英文|功能|
+|:-:|:-:|:-:|
+|输入组装 |Input Assembler| 将顶点组装成图元供其他阶段使用，但邻接信息仅在 Geometry Shader 可见 |
+|顶点着色器| Vertex Shader | 逐顶点处理着色，一般会处理变换与投影 (MVP 矩阵)，将顶点转换到齐次剪切空间|
+|曲面细分|Tesselation| 可选阶段，包括两个着色器和一个细分阶段|
+|几何着色器|Geometry Shader|可选阶段，能够处理/增/删图元|
+|流输出|Stream Out|可选阶段，将新增的图元存入 memory|
+|裁剪与屏幕映射|Clipping & Screen Mapping|剔除视锥外的顶点，将顶点转换到屏幕坐标系|
+
+
+#### 顶点着色器 Vertex Shader
+
+&emsp;&emsp;顶点着色器的输入是顶点和顶点属性，顶点着色器负责将顶点的位置从局部空间转换到齐次剪切空间 (Homogeneous Clipping Space)，顶点着色器还可以操作顶点相关的属性，比如颜色，法线，纹理坐标等，一般会在顶点着色器会计算逐顶点的光照。
+
+&emsp;&emsp;还会在顶点着色器做其他一些操作，比如 Instancing (将同一个物体的顶点绘制在多个地方)，或者做关节动画，蒙皮，顶点动画。
+
+##### 变换 Transformation
+
+&emsp;&emsp;在顶点着色器里会将顶点从局部空间转换到齐次剪切空间，需要经过 MVP 变换 (Model, View, Projection Transformation)。
+- Model ：局部空间->世界空间
+- View：世界空间->相机空间
+- Projection: 相机空间->齐次剪切空间
+
+&emsp;&emsp;Model 变换牵涉到三个矩阵，缩放，旋转，平移 (Scale, Rotation, Translation，SRT)。缩放和旋转是线性变换，可以用三维矩阵来表示。平移是仿射变换，放在齐次空间，用四维矩阵来表示更加方便。SRT 的值一般存在物体的属性中，运算时取出来，组成矩阵，并将三个矩阵连乘起来，与顶点相乘。
+
+&emsp;&emsp;View 变换是将顶点从世界空间转到相机空间，这是一个简单的坐标系变换。将相机的 pos, up, center (相机看向的点) 三个点传入，进行叉积运算，就得到了 view 坐标基矩阵。
+
+##### 投影 Projection
+
+&emsp;&emsp;Projection 变换是将三维空间通过投影转换到二维的平面上。投影有透视投影和正交投影两种。
+
+&emsp;&emsp;在透视投影中，相机空间会设置最远/最近的距离，可见的物体会被限制在一个平头椎体 (Frustum) 的范围内。透视矩阵所要做的事情就是将这个平头椎体内的点透射到近视点的平面。
+
+&emsp;&emsp;实际上，顶点着色器还需要将齐次剪切空间的点映射到统一的坐标上。因为光栅化阶段的硬件需要 NDC 坐标 (Normalized Device Coordinates)，该坐标与屏幕的长宽比无关，等同于将平头椎体变成了单位立方体。
+
+&emsp;&emsp;顶点坐标乘以投影矩阵后，需要是 NDC 坐标。
+
+#### 可选阶段 Optional Stage
+##### 表面细分 Tessellation
+
+&emsp;&emsp;Tessellation 主要用来做面的细分，可以将现有的面数拆分得更多，提供更多得细节。这个阶段常用来生成更精细的地形或其他表面。
+ 
+##### 几何着色器 Geometry Shader
+
+&emsp;&emsp;几何着色器的输入是整个图元，还可以获得邻接图元的信息。几何着色器可以丢弃一些图元，还可以生成新的图元。这个阶段可以简化图元，例如用来做细节等级 (Level of detail，LOD)。也可以用来生成图形，例如用来做粒子生成。
+
+&emsp;&emsp;与 Tessellation 相比，几何着色器可以丢弃图元，也可以将现有的图元转换成其他图元。而 Tessellation 只能增加面数。
+
+##### 流输出 Stream Output
+
+&emsp;&emsp;在几何着色器中生成的顶点数据可以流输出到 GPU Memory 。这些数据可以再次放到流水线里，或者被 CPU 读取。这种方式可以迭代处理数据，常用来做水流模拟，或者粒子效果。
+
+#### 裁剪与屏幕映射 Clipping & Screen Mapping 
+
+&emsp;&emsp;经过上述阶段，顶点是 NDC 坐标，目前的可视空间等于一个单位立方体。硬件会负责对可视空间的图元进行裁剪。
+
+- 在立方体之外的，舍弃掉
+- 在立方体之内的，保留
+- 和立方体边缘相交的，会改变图元。例如一条线与立方体相交，在外的顶点会被剔除，改成相交处的地点。
+
+&emsp;&emsp;经过裁剪，就只剩下立方体内的顶点了。然后需要将二维的 NDC 坐标映射到屏幕坐标系上，这个过程就是屏幕映射。
+
+### 光栅化阶段 The Rasterizer Stage
+
+&emsp;&emsp;在光栅化之前，整个空间都是连续的，但屏幕上的像素点是个点阵，像素点之间的线就像栅栏，将原来连续的空间筛成了点阵，这就是光栅化的含义。
+
+&emsp;&emsp;光栅化输入的是二维屏幕空间的顶点位置及相关属性 (深度值Z，法线等)，此阶段会由硬件计算出屏幕像素对应的相关属性。
+
+#### 三角形设定 Triangle Setup
+&emsp;&emsp;之前得到的都是三角形的顶点，而之后要计算屏幕上三角形会覆盖那些像素。三角形设定阶段会计算三角形边上 (及内部？)的像素坐标及相关的属性。
+
+&emsp;&emsp;(推测：应该是在这个阶段进行 反面剔除 (Backface Culling)，将反面朝向相机的三角形扔掉。)
+
+#### 三角形遍历 Triangle Traversal
+
+&emsp;&emsp;这个阶段会进行逐像素检查，检查每个像素 (或采样点)是否被三角形覆盖，如果覆盖则生成一个片元 (Fragment)。这一阶段也被称为扫描转换 (Scan Conversion)。
+
+
+
+### 像素处理 Pixel Processing
+#### 像素着色器 Pixel Shader
+
+&emsp;&emsp;像素着色器也被叫做片元着色器  (Fragment Shader)，用来逐像素的计算着色，纹理贴图和纹理过滤一般都是在这个阶段进行的。
+
+&emsp;&emsp;像素着色器的输入是逐像素的属性，这些属性是根据上个阶段中的顶点插值而得到的，插值一般使用透视纠正插值  (Perspective Correct Interpolation)由硬件完成，需要借助深度值才能正确地插值。
+
+&emsp;&emsp;像素着色器还可以获取邻近像素插值的变化量，可以进行梯度计算，这个特性主要用来做纹理过滤。
+
+&emsp;&emsp;像素着色器会输出一个该像素 (片元)的颜色，也可以选择不输出。像素着色器还可以修改 深度缓冲 (Depth Buffer)，甚至是模板缓冲 (Stencil Buffer)的值。
+
+&emsp;&emsp;在现代 GPU 上，像素着色器 可以将进行不同类型的输出，并写入多重渲染目标 (Multiple Render Targets，MRT)，一个 RT 就是一个 buffer，可以将不同的信息写入不同的 RT，然后在下个阶段合成
+
+#### 合并 Merging
+
+&emsp;&emsp;这个阶段主要是将目前这一帧计算出来的 Fragment 颜色和系统中所有的 buffer 合并，得到最终的颜色值。合并阶段不可编程，但是高度可配置。
+
+&emsp;&emsp; 通常会在这个阶段根据 Z-buffer 进行 可见性测试 (Depth test，深度测试)，只渲染能看见的片元。也会进行透明度测试 (Alpha Test)，混合半透明物体与透明物体的颜色。模板缓冲也会用来控制颜色合并。
+
+&emsp;&emsp; 经过合并阶段就可以得到最终屏幕显示的颜色了。
+
+### 总结
+
+&emsp;&emsp;这篇文章只是简单介绍下图形渲染管线的各个部分，旨在理清楚各部分大致的功能，输入及输出。目前还有一些功能部分不清晰，日后再进行修改。
+
+[返回目录](#Content)
