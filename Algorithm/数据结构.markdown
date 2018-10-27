@@ -1,0 +1,285 @@
+#### 概念
+
+哈希函数：`H(key): K -> D , key ∈ K`
+
+#### 构造方法
+
+* 直接定址法
+* 除留余数法
+* 数字分析法
+* 折叠法
+* 平方取中法
+
+#### 冲突处理方法
+
+* 链地址法：key 相同的用单链表链接
+* 开放定址法
+    * 线性探测法：key 相同 -> 放到 key 的下一个位置，`Hi = (H(key) + i) % m`
+    * 二次探测法：key 相同 -> 放到 `Di = 1^2, -1^2, ..., ±（k)^2,(k<=m/2）`
+    * 随机探测法：`H = (H(key) + 伪随机数) % m`
+
+
+### 链式结构
+
+
+<details><summary>链式数据结构</summary>
+
+```cpp
+typedef struct LNode {
+    ElemType data;
+    struct LNode *next;
+} LNode, *LinkList; 
+```
+
+
+### 二叉树
+
+#### 存储结构
+
+<details><summary>二叉树数据结构</summary>
+
+```cpp
+typedef struct BiTNode
+{
+    TElemType data;
+    struct BiTNode *lchild, *rchild;
+}BiTNode, *BiTree;
+```
+
+</details>
+
+#### 性质
+
+1. 非空二叉树第 i 层最多 2<sup>(i-1)</sup> 个结点 （i >= 1）
+2. 深度为 k 的二叉树最多 2<sup>k</sup> - 1 个结点 （k >= 1）
+3. 度为 0 的结点数为 n<sub>0</sub>，度为 2 的结点数为 n<sub>2</sub>，则 n<sub>0</sub> = n<sub>2</sub> + 1
+4. 有 n 个结点的完全二叉树深度 k = ⌊ log<sub>2</sub>(n) ⌋ + 1 
+5. 对于含 n 个结点的完全二叉树中编号为 i （1 <= i <= n） 的结点
+    1. 若 i = 1，为根，否则双亲为 ⌊ i / 2 ⌋
+    2. 若 2i > n，则 i 结点没有左孩子，否则孩子编号为 2i
+    3. 若 2i + 1 > n，则 i 结点没有右孩子，否则孩子编号为 2i + 1
+
+#### 遍历方式
+
+* 先序遍历
+* 中序遍历
+* 后续遍历
+* 层次遍历
+
+#### 分类
+
+* 满二叉树
+* 完全二叉树（堆）
+    * 大顶堆：根 >= 左 && 根 >= 右
+    * 小顶堆：根 <= 左 && 根 <= 右
+* 二叉查找树（二叉排序树）：左 < 根 < 右
+* 平衡二叉树（AVL树）：| 左子树树高 - 右子树树高 | <= 1
+* 最小失衡树：平衡二叉树插入新结点导致失衡的子树：调整：
+    * LL型：根的左孩子右旋
+    * RR型：根的右孩子左旋
+    * LR型：根的左孩子左旋，再右旋
+    * RL型：右孩子的左子树，先右旋，再左旋
+
+### 其他树及森林
+
+#### 树的存储结构
+
+* 双亲表示法
+* 双亲孩子表示法
+* 孩子兄弟表示法
+
+#### 并查集
+
+一种不相交的子集所构成的集合 S = {S1, S2, ..., Sn}
+
+#### 平衡二叉树（AVL树）
+
+##### 性质
+
+* | 左子树树高 - 右子树树高 | <= 1
+* 平衡二叉树必定是二叉搜索树，反之则不一定
+* 最小二叉平衡树的节点的公式：`F(n)=F(n-1)+F(n-2)+1` （1 是根节点，F(n-1) 是左子树的节点数量，F(n-2) 是右子树的节点数量）
+
+##### 最小失衡树
+
+平衡二叉树插入新结点导致失衡的子树
+
+调整：
+
+* LL 型：根的左孩子右旋
+* RR 型：根的右孩子左旋
+* LR 型：根的左孩子左旋，再右旋
+* RL 型：右孩子的左子树，先右旋，再左旋
+
+#### 红黑树
+
+##### 红黑树的特征是什么？
+
+1. 节点是红色或黑色。
+2. 根是黑色。
+3. 所有叶子都是黑色（叶子是 NIL 节点）。
+4. 每个红色节点必须有两个黑色的子节点。（从每个叶子到根的所有路径上不能有两个连续的红色节点。）（新增节点的父节点必须相同）
+5. 从任一节点到其每个叶子的所有简单路径都包含相同数目的黑色节点。（新增节点必须为红）
+
+##### 调整
+
+1. 变色
+2. 左旋
+3. 右旋
+
+##### 应用
+
+* 关联数组：如 STL 中的 map、set
+
+##### 红黑树、B 树、B+ 树的区别？
+
+* 红黑树的深度比较大，而 B 树和 B+ 树的深度则相对要小一些
+* B+ 树则将数据都保存在叶子节点，同时通过链表的形式将他们连接在一起。
+
+#### B 树（B-tree）、B+ 树（B+-tree）
+
+<details><summary>B 树、B+ 树图片</summary>
+
+![B 树（B-tree）、B+ 树（B+-tree）](https://i.stack.imgur.com/l6UyF.png)
+
+</details>
+
+##### 特点
+
+* 一般化的二叉查找树（binary search tree）
+* “矮胖”，内部（非叶子）节点可以拥有可变数量的子节点（数量范围预先定义好）
+
+##### 应用
+
+* 大部分文件系统、数据库系统都采用B树、B+树作为索引结构
+
+##### 区别
+
+* B+树中只有叶子节点会带有指向记录的指针（ROWID），而B树则所有节点都带有，在内部节点出现的索引项不会再出现在叶子节点中。
+* B+树中所有叶子节点都是通过指针连接在一起，而B树不会。
+
+##### B树的优点
+
+对于在内部节点的数据，可直接得到，不必根据叶子节点来定位。
+
+##### B+树的优点
+
+* 非叶子节点不会带上 ROWID，这样，一个块中可以容纳更多的索引项，一是可以降低树的高度。二是一个内部节点可以定位更多的叶子节点。
+* 叶子节点之间通过指针来连接，范围扫描将十分简单，而对于B树来说，则需要在叶子节点和内部节点不停的往返移动。
+
+> B 树、B+ 树区别来自：[differences-between-b-trees-and-b-trees](https://stackoverflow.com/questions/870218/differences-between-b-trees-and-b-trees)、[B树和B+树的区别](https://www.cnblogs.com/ivictor/p/5849061.html)
+
+#### 八叉树
+
+<details><summary>八叉树图片</summary>
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Octree2.png/400px-Octree2.png)
+
+</details>
+
+八叉树（octree），或称八元树，是一种用于描述三维空间（划分空间）的树状数据结构。八叉树的每个节点表示一个正方体的体积元素，每个节点有八个子节点，这八个子节点所表示的体积元素加在一起就等于父节点的体积。一般中心点作为节点的分叉中心。
+
+##### 用途
+
+* 三维计算机图形
+* 最邻近搜索
+
+
+### 复杂度
+gcd算法复杂度，
+
+### 排序算法
+https://blog.csdn.net/wangiijing/article/details/51485119
+
+https://www.cnblogs.com/zhaoshuai1215/p/3448154.html
+http://www.cnblogs.com/eniac12/p/5329396.html
+https://blog.csdn.net/weixin_38594819/article/details/79234174
+各种排序复杂度，希尔排序实现，堆排序最坏时间复杂度，std::sort复杂度，
+
+quicksort序列辨析
+
+    比较排序和非比较排序
+
+      常见的排序算法都是比较排序，非比较排序包括计数排序、桶排序和基数排序，非比较排序对数据有要求，因为数据本身包含了定位特征，所有才能不通过比较来确定元素的位置。
+
+      比较排序的时间复杂度通常为O(n2)或者O(nlogn)，比较排序的时间复杂度下界就是O(nlogn)，而非比较排序的时间复杂度可以达到O(n)，但是都需要额外的空间开销。
+
+      比较排序时间复杂度为O(nlogn)的证明：
+
+      a1,a2,a3……an序列的所有排序有n!种，所以满足要求的排序a1',a2',a3'……an'（其中a1'<=a2'<=a3'……<=an'）的概率为1/n!。基于输入元素的比较排序，每一次比较的返回不是0就是1，这恰好可以作为决策树的一个决策将一个事件分成两个分支。比如冒泡排序时通过比较a1和a2两个数的大小可以把序列分成a1,a2……an与a2,a1……an（气泡a2上升一个身位）两种不同的结果，因此比较排序也可以构造决策树。根节点代表原始序列a1,a2,a3……an，所有叶子节点都是这个序列的重排（共有n!个，其中有一个就是我们排序的结果a1',a2',a3'……an'）。如果每次比较的结果都是等概率的话（恰好划分为概率空间相等的两个事件），那么二叉树就是高度平衡的，深度至少是log(n!)。
+
+      又因为 1. n! < nn ,两边取对数就得到log(n!)<nlog(n)，所以log(n!) = O(nlogn).
+
+                2. n!=n(n-1)(n-2)(n-3)…1 > (n/2)^(n/2) 两边取对数得到 log(n!) > (n/2)log(n/2) = Ω(nlogn)，所以 log(n!) = Ω(nlogn)。
+
+      因此log(n!)的增长速度与 nlogn 相同,即 log(n!)=Θ(nlogn)，这就是通用排序算法的最低时间复杂度O(nlogn)的依据。
+
+      1.从时间复杂度选择
+
+对元素个数较多的排序，可以选择快速排序、堆排序、归并排序；元素较少时，可以选择简单的排序方法。
+
+2.从空间复杂度选择
+
+尽量选择空间复杂度为O(1)的排序方法，其次选空间复杂度为O(logn)的快速排序方法，最后才选择空间复杂度为O(n)的二路归并排序方法。
+
+3.一般选择规则
+
+（1）元素个数n大，排序码分布随机，      稳定性不做要求---------快速排序
+
+（2）元素个数n大，内存空间允许，        要求稳定性-------------二路归并排序
+
+（3）元素个数n大，排序码可能正序或逆序，稳定性不做要求---------堆排序、二路归并
+
+（4）元素个数n小，排序码基本有序或随机，要求稳定性-------------直接插入排序
+
+（5）元素个数n小，稳定性不做要求------直接选择排序
+
+（6）元素个数n小，排序码不接近逆序----直接插入排序
+
+（7）冒泡排序一般很少用
+
+
+
+
+
+
+排序算法 | 平均时间复杂度 | 最差时间复杂度 | 空间复杂度 | 数据对象稳定性
+---|---|---|---|---
+[冒泡排序](Algorithm/BubbleSort.h) | O(n<sup>2</sup>)|O(n<sup>2</sup>)|O(1)|稳定
+[选择排序](Algorithm/SelectionSort.h) | O(n<sup>2</sup>)|O(n<sup>2</sup>)|O(1)|数组不稳定、链表稳定
+[插入排序](Algorithm/InsertSort.h) | O(n<sup>2</sup>)|O(n<sup>2</sup>)|O(1)|稳定
+[快速排序](Algorithm/QuickSort.h) | O(n*log<sub>2</sub>n) |  O(n<sup>2</sup>) | O(log<sub>2</sub>n) | 不稳定
+[堆排序](Algorithm/HeapSort.cpp) | O(n*log<sub>2</sub>n)|O(n*log<sub>2</sub>n)|O(1)|不稳定
+[归并排序](Algorithm/MergeSort.h) | O(n*log<sub>2</sub>n) | O(n*log<sub>2</sub>n)|O(n)|稳定
+[希尔排序](Algorithm/ShellSort.h) | O(n*log<sup>2</sup>n)|O(n<sup>2</sup>)|O(1)|不稳定
+[计数排序](Algorithm/CountSort.cpp) | O(n+m)|O(n+m)|O(n+m)|稳定
+[桶排序](Algorithm/BucketSort.cpp) | O(n)|O(n)|O(m)|稳定
+[基数排序](Algorithm/RadixSort.h) | O(k*n)|O(n<sup>2</sup>)| |稳定
+
+> * 均按从小到大排列
+> * k：代表数值中的 “数位” 个数
+> * n：代表数据规模
+> * m：代表数据的最大值减最小值
+> * 来自：[wikipedia . 排序算法](https://zh.wikipedia.org/wiki/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95)
+
+
+### 查找
+
+查找算法 | 平均时间复杂度 | 空间复杂度 | 查找条件
+---|---|---|---
+[顺序查找](Algorithm/SequentialSearch.h) | O(n) | O(1) | 无序或有序
+[二分查找（折半查找）](Algorithm/BinarySearch.h) | O(log<sub>2</sub>n)| O(1) | 有序
+[插值查找](Algorithm/InsertionSearch.h) | O(log<sub>2</sub>(log<sub>2</sub>n)) | O(1) | 有序
+[斐波那契查找](Algorithm/FibonacciSearch.cpp) | O(log<sub>2</sub>n) | O(1) | 有序
+[哈希查找](DataStructure/HashTable.cpp) | O(1) | O(n) | 无序或有序
+[二叉查找树（二叉搜索树查找）](Algorithm/BSTSearch.h) |O(log<sub>2</sub>n) |   | 
+[红黑树](DataStructure/RedBlackTree.cpp) |O(log<sub>2</sub>n) | |
+2-3树 | O(log<sub>2</sub>n - log<sub>3</sub>n) |   | 
+B树/B+树 |O(log<sub>2</sub>n) |   | 
+
+
+算法 |思想| 应用
+---|---|---
+[分治法](https://zh.wikipedia.org/wiki/%E5%88%86%E6%B2%BB%E6%B3%95)|把一个复杂的问题分成两个或更多的相同或相似的子问题，直到最后子问题可以简单的直接求解，原问题的解即子问题的解的合并|[循环赛日程安排问题](https://github.com/huihut/interview/tree/master/Problems/RoundRobinProblem)、排序算法（快速排序、归并排序）
+[动态规划](https://zh.wikipedia.org/wiki/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92)|通过把原问题分解为相对简单的子问题的方式求解复杂问题的方法，适用于有重叠子问题和最优子结构性质的问题|[背包问题](https://github.com/huihut/interview/tree/master/Problems/KnapsackProblem)、斐波那契数列
+[贪心法](https://zh.wikipedia.org/wiki/%E8%B4%AA%E5%BF%83%E6%B3%95)|一种在每一步选择中都采取在当前状态下最好或最优（即最有利）的选择，从而希望导致结果是最好或最优的算法|旅行推销员问题（最短路径问题）、最小生成树、哈夫曼编码

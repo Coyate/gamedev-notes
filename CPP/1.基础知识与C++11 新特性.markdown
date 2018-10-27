@@ -1,0 +1,571 @@
+---
+layout: post
+title: "基础知识与C++11 新特性"
+date: 2018-10-25 16:41:30
+update: 2018-10-27 18:27:30
+categories: C++
+img:
+---
+
+- [变量，类型，表达式](#变量类型表达式)
+	- [变量](#变量)
+	- [类型](#类型)
+	- [表达式](#表达式)
+- [引用，指针，数组](#引用指针数组)
+	- [引用](#引用)
+	- [指针](#指针)
+	- [数组](#数组)
+- [C++11 新特性](#c11-新特性)
+	- [range `for`](#range-for)
+	- [列表初始化](#列表初始化)
+	- [`initializer_list` 可变形参](#initializer_list-可变形参)
+	- [模板](#模板)
+- [C++11 关键字](#c11-关键字)
+	- [`const` 常量](#const-常量)
+	- [`auto` 自动类型推断](#auto-自动类型推断)
+	- [`decltype` 类型推断指示符](#decltype-类型推断指示符)
+	- [`nullptr`](#nullptr)
+	- [`::` 作用域符](#-作用域符)
+	- [`using` 与 `namespace`](#using-与-namespace)
+	- [`constexpr` 常量表达式](#constexpr-常量表达式)
+
+
+### 变量，类型，表达式
+
+#### 变量
+
+&emsp;&emsp;变量需要需要先声明再定义，声明和定义也可以放在一起，函数同理。类中的静态成员变量必须在类外初始化。
+
+> - **变量最好在声明时都进行初始化，避免出现未定义变量。**
+
+&emsp;&emsp;对于指针变量来说，一次最好只声明并初始化一个，否则容易出现混淆。
+
+<details> <summary> 混淆示例 </summary>
+
+```cpp
+int* p = nullptr, p1 = nullptr; // 错误，p1 的类型是 int，这种写法容易混淆
+int *p2 = nullptr, *p3 = p2; // 这种写法稍好，但最好别再同一行中声明多个指针变量
+// 在同一行中进行连续声明，可以使用已经声明的变量去初始化逗号右边的变量（原则上不推荐）
+```
+
+</details>
+
+#### 类型
+
+C++内置类型如下，长度的单位是字节：
+
+| 类型          | 定义长度       | 实测长度(x86) | 实测长度(x64) | 范围(有符号)        | 精度               |
+|-------------|------------|-----------|-----------|----------------|------------------|
+| bool        | 1 bit      | 1         | 1         | true or false  | 被padding到1字节     |
+| char        | 1          | 1         | 1         | -2^7~2^7-1   |                  |
+| short       | 小于等于int    | 2         | 2         | -2^15~2^15-1 |                  |
+| int         | 4          | 4         | 4         | -2^31~2^31-1 |                  |
+| long        | 大于等于int    | 4         | 4         | -              |                  |
+| long long   | 大于等于long   | 8         | 8         | -2^63~2^63-1 |                  |
+| float       | 4          | 4         | 4         | 3.4E +/- 38    | 符号1位，指数8位，尾数23位  |
+| double      | 8          | 8         | 8         | 1.7E +/- 308   | 符号1位，指数11位，尾数52位 |
+| long double | 大于等于double | 8         | 8         | -              |                  |
+| 指针          | 机器位数       | 4         | 8         | -              |
+
+#### 表达式
+
+- `&&`, `||`, 与或运算符都是先左后右进行计算，并有短路求值特性
+- `,` 逗号运算符是顺序求值的，运算级别最低
+- `<<` 运算符未规定求值顺序
+
+	
+<details> <summary> 错误示范  </summary>
+
+```cpp
+
+i = 0;
+cout << i << ++i << endl; // 未定义行为
+
+x = (++i) * i; // 也不要这么写
+
+```
+
+</details>
+
+
+> - **如果在某个表达式中改变了一个变量的值，不要在该条表达式中再使用这个变量**
+
+
+
+### 引用，指针，数组
+
+#### 引用
+
+&emsp;&emsp;引用和指针很像，在多数应用场景下可以取代指针。
+
+引用与指针的区别：
+
+- 引用必须初始化，指针不需要初始化
+- 引用不能为空，指针可以为空
+- 引用不能修改绑定的对象，指针可以
+- 引用不是对象，只是一个别名，指针是对象
+- 因为引用不是对象，所以不能定义引用的引用，而可以定义指向指针的指针
+- 对引用做运算是改变对象的值，而对指针做运算解引用 `*`，否则是改变指针本身的值（`++p`）
+- `sizeof()` 操作引用是判断其绑定对象的大小，而操作指针会返回指针的大小
+
+为什么要使用引用：
+- 函数传递引用可以和传递指针一样避免拷贝大块对象（超过一个指针长度）
+- C++中临时变量都是 `const`，在函数不改变对象内容的情况下，使用 `const &` 作为函数参数更加安全。
+- 引用不传入函数时，会被编译器优化掉，不消耗内存。（传入函数后可能会消耗和指针一样多的内存）
+
+#### 指针
+
+- void *指针可以指向任何对象，但无法访问所指向的对象
+- 同类型指针可以相减
+- 需要分清楚常指针与指向常量的指针，`const` 在 `*` 号左边表示对象不能改变，在右边表示指针本身不能改变
+
+<details> <summary> 指针要点 </summary>
+
+```cpp
+// void *
+int i = 0;
+void *p = &i;
+// *p = 1; // 出错，无法解引用非完全类型的指针
+
+// 指针相减
+int *p1 = nullptr, *p2 = nullptr;
+auto d = p2 - p1; // (q的地址-p的地址) / sizeof(int)
+
+// const 在星号左侧，对象的值无法改变
+const int *p3 = &i;
+int const *p4 = &i;
+//*a = 5; // 出错，表达式无法修改
+
+// const 在星号右侧，指针本身无法改变
+int *const p5 = &i;
+//p5 = p1; // 出错，表达式无法修改
+
+// 两边都有，对象的值和指针本身都无法改变
+const int *const p6 = &i;
+```
+</details>
+
+#### 数组
+
+&emsp;&emsp;C++ 的数组是延续的 C 语言数组，基本没有什么不同。
+
+- 数组的元素会被默认初始化
+- 数组的下标类型为 `<cstddef>` 中的 `size_t`
+- 数组索引可以处理负值(`a[-1]`)
+- 数组声明时的维度必须是常量表达式(C++14 前)
+- 数组声明时的维度可以是 `size_t` 类型的变量(C++14 起, vs2017 无法使用这条特性，lintcode 可以)
+- 数组不能直接拷贝赋值
+- `auto` 不能推断数组大小，会得到数组名的指针类型
+- `decltype` 可以得到数组的类型，包括大小
+- `sizeof()` 求数组大小时，编译期会将结果变成字面值
+- `<iterator>` 中的 `begin(A)`, `end(A)` 可以获取数组的头尾指针,不推荐手动获取 
+
+<details> <summary>各种数组的写法 </summary>
+
+```cpp
+/// 数组的各种写法
+int arr[10];	// 整型数组
+int* arr_of_ptr[10];	// 指针的数组
+//int &refs[10];	// 不存在引用的数组
+int(*ptr_to_arr)[10] = &arr;	// Parray为指针，指向大小为10的整形数组
+int(&ref_to_arr)[10] = arr;		// arrRef为引用，引用大小为10的整形数组
+int*(&ref_to_arr_of_ptr)[10] = arr_of_ptr;  // ParrRef为引用，引用大小为10的整形指针数组
+
+/// 数组，指针混合写法
+int i = 0;		// 整型变量	
+int *p = &i;	// 整型指针	
+int **pp = &p;	// 指向整型指针的指针	
+int a[10];		// 整型数组	
+int* ap[10];	// 整型指针的数组	
+int(*pa)[10] = &a;	// 指向整型数组的指针	
+int(*pf)(int);	// 函数指针	
+int(*apf[10])(int);	// 函数指针的数组	
+
+// 数组传参
+int a[10];
+	
+// 基础写法
+void fun(int*);
+void fun(int[]); // 与上一种写法等价
+void fun(int[], int length);
+
+// 传入首尾指针写法
+void fun(int *beg, int *end);
+fun(begin(a), end(a)); // 这两个函数位于<iterator> 
+
+```
+
+</details>
+
+<details> <summary>对数组使用 using 和 range for </summary>
+
+```cpp
+/// 可以用别名简化，减少理解难度
+// 一般写法
+int v[4];
+int(*pv)[4] = &v;
+
+// 使用别名
+using vec4_int = int[4];
+vec4_int v;
+vec4_int* pv = &v;
+
+
+/// 多维数组可以使用 Range for
+int matrix[100][100];
+for (auto &row : matrix) {
+	for (auto &col : row) {
+		// do something
+	}
+}
+```
+
+</details>
+	
+
+<details> <summary>多维数组</summary>
+
+```cpp
+
+// 多维数组初识
+int v[2][10]{ {1,2,3,4,5,6,7,8,9,10}, {11,12,13,14,15,16,17,18,19,20} };
+int(*arr)[10] = v; // 数组指针
+
+cout << **arr << endl;		// 1
+cout << **(arr + 1) << endl;	// 11
+cout << *(*arr + 1) << endl;  // 2
+cout << *(arr[0] + 1) << endl;// 2
+cout << *(arr[1]) << endl;	// 11
+
+
+// 多维数组练习
+int a[] = { 1,2,3,4,5 };
+int *p = (int*)(&a + 1);
+cout << *(p - 1) << endl; // 5
+
+// 分解步骤
+int(*p1)[5] = &a;  // a为数组名,会转换为指针, &a相当于取指针的地址,所以p1是指向数组的指针,p1中存的是 a[0][0],也是 a[0] 的地址
+int(*p2)[5] = p1 + 1;// 整体加了一行,即从 a[0][0] 增加一行, p2 指向 a[1][0], 即 a[5], 第六个元素
+int *p3 = (int*)p2; // 将指向数组的指针转换为指向整形的指针, p3 也指向 a[5]
+int *p4 = p3 - 1;	// a[5] 向前移动一个，p4 指向 a[4]
+
+// 多维字符串
+char* a2[] = { "hello", "the", "world" };
+char **pa = a2;
+++pa;	
+cout << *pa << endl; // "the"
+
+```
+
+</details>
+
+### C++11 新特性
+
+#### range `for`
+
+&emsp;&emsp;一种自动的 `for` 循环，非常方便，支持标准库的各种容器，也支持数组，自动检查边界和类型。
+
+- 使用 range for 时,内循环不能包含修改元素数量的语句
+
+<details> <summary> range for 使用</summary>
+
+```cpp
+string s;
+
+for (auto& c : s) {
+	if(isalpha(c))
+		toupper(c);
+}
+
+// 等同于
+for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
+	if (isalpha(*beg))
+		toupper(*beg);
+}
+```
+
+</details>
+
+
+#### 列表初始化 
+
+&emsp;&emsp;列表初始化在 C 语言中，但在 C++ 中功能被放大了。在 C 中只允许对 POD 数据（Plain old data，只有内置类型数据成员的结构体）进行列表初始化，而 C++ 中可以对类进行列表初始化，还可以对分配在堆上的对象进行初始化。
+
+- 列表初始化只调用类的构造函数而不需要拷贝构造函数
+- 列表初始化可以防止隐式转换，可以防止类型收窄
+- 可以对聚合类进行列表初始化，列表参数需要和聚合类声明顺序一致，满足以下条件的为聚合类
+	- 所有成员为public
+	- 没有定义任何构造函数
+	- 没有基类
+	- 没有virtual函数
+	- 没有类内初始值
+
+<details><summary>初始化列表使用</summary> 
+
+```cpp
+
+	double d = 3.1415926;
+	int a{ d }; // 可能发生收缩转换，编译器不让通过
+	int a2(d);	// 发生收缩转换，精度损失
+
+	struct Data {
+		int ival;
+		string s;
+	};
+
+	Data val{ 1, "kkk" };
+	Data val2{ 1 }; //若初始化列表数量少于成员数量，则其后的成员被
+
+```
+
+</details>
+
+
+<details> <summary> 初始化的一些区别 </summary>
+- 默认初始化
+	- 在函数体外的变量会置为该类型的0
+	- 函数体内默认初始化对象的值是未定义的
+
+- 零初始化
+	- 标量类型置为0
+	- 非聚合类的非静态成员
+	- 聚合类
+- 值初始化
+	- 被良好定义的值初始化
+
+</details>
+
+
+#### `initializer_list` 可变形参
+
+&emsp;&emsp;在头文件 `<initializer_list>` 中，可以为函数声明可变长度的形参，是列表初始化的实现方式。
+
+&emsp;&emsp;拷贝一个 `initializer_list` 不会拷贝其中的元素，拷贝后的列表和原始列表共享元素（像引用）。
+
+<details> <summary> </summary>
+
+```cpp
+void error_msg(initializer_list<string> il) {
+	for(auto const &s : il)
+		cout << s << " ";
+	cout << endl;
+}
+
+error_mst({"this file", "this line", "error:", "2077"});
+```
+
+</details>
+ 
+
+#### 模板
+
+&emsp;&emsp; 模板是 C++ 用来实现泛型编程的一种特性，泛型编程（Generic Programming）是一种基于参数化（parameterization）的编程技巧，可以将类型作为模板的参数，使得模板函数可以处理不同类型的对象。
+
+
+<details> <summary>模板的低级使用 </summary>
+
+```cpp
+template <typename T> 
+void print(const vector<T> &v) {
+	for (auto const &e : v)
+		cout << e << " ";
+	cout << endl;
+}
+
+
+int main()
+{
+	vector<int> v1{ 1, 2, 3, 4, 5 };
+	vector<string> v2{ "there", "is", "no", "hope"};
+	print(v1);
+	print(v2);
+}
+
+```
+
+</details>
+
+### C++11 关键字
+
+####  `const` 常量
+
+&emsp;&emsp;将 `const` 限定符加在变量上，编译器就会帮忙检查该变量是否被程序改变，加在函数形参上，编译器就会帮忙检查该形参是否在函数中被改变，加在成员函数上，编译器就会帮忙检查是否有类成员在该函数中被改变。
+
+&emsp;&emsp;所以，有**任何不会变的变量或参数，任何不会修改数据成员的函数，全都加上 `const`**，这就是 `const-correctness`。靠编程者自己来检查一个变量是否被改变（误改变）是很难做到的，把需要检查的问题尽量都抛给编译器。
+
+- 尽量使用常量引用(`const T&`)作为参数类型，即避免了拷贝，又避免了函数对值的修改
+- 在参数中使用 `const` 应该使用引用或指针，不要使用对象
+- 不要轻易的将函数的返回值定为 `const`
+- 默认情况下，`const` 仅在文件内有效，不同文件用同名 `const` 时，相当于定义了不同的变量
+- `const` 引用可以用表达式初始化，并支持类型转换，非 `const` 引用不行
+
+
+<details><summary>const 引用</summary> 
+
+```cpp
+/// 常量引用
+double dval = 3.14;
+//int &r = dval; // 类型不同，无法初始化
+const int &r = dval + 1;
+cout << r << endl;	// 4
+
+// 实际上等同于
+const int temp = dval + 1;
+const int &r2 = temp;
+
+```
+
+</details>
+
+
+
+####  `auto` 自动类型推断
+ 
+ &emsp;&emsp;使用 `auto` 可以推断出变量或表达式的类型。
+
+- `auto` 推断指针时会忽略 top-level `const` (指向对象的值不变)，保留 low-level `const`（自身不变）
+- 需要 top-level `const` 需要主动声明（最好主动声明 `const`）
+- `auto` 会忽略引用
+- 使用同一个 `auto` 推断多个变量，变量必须为同一类型
+- 在函数声明前加 `auto` 可以尾置返回类型，在返回类型复杂时较有用
+
+<details> <summary> </summary>
+
+```cpp
+auto func(int i) -> int (*)[10]
+```
+
+</details>
+
+#### `decltype` 类型推断指示符 
+
+&emsp;&emsp;`decltype` 也是用来推断表达式的类型，与 `auto` 不同的是，`decltype` 会返回 top-level `const` 和 引用。
+
+- `decltype` 不会计算其中的表达式
+- 
+
+<details><summary>decltype 使用</summary> 
+
+```cpp
+// 推断返回类型
+int arr[] = { 1, 3, 5, 7, 9 };
+decltype(arr) *arrPtr(int i); // 推断数组需要手动加*
+
+int i = 0, x = 1;
+decltype(i = x) i2 = i; // 类型为 int&，表达式的返回类型是引用类型
+decltype((i)) i3 = i; // int& 多了一层括号，内层括号会变成表达式
+	
+int* p = nullptr;
+decltype(p) p2 = nullptr;	// int*
+decltype(*p) p3 = i; // int&，解引用运算符生成了左值
+decltype(&p) p4 = &p; // int**，取地址运算符
+
+/// auto 与 decltype 区别
+
+const double d = 10;
+auto d1 = d; // double
+decltype(d) d2 = d; // const double
+
+const double &r = d;
+auto r1 = r;	// double
+decltype(r) r2 = r;	// const double&
+	
+
+```
+
+</details>
+
+
+#### `nullptr`
+
+&emsp;&emsp;`nullptr` 是 C++ 用来表示空指针的关键字，具有针对指针的类型检查，比使用 `0` 和 `NULL` 更安全。
+
+&emsp;&emsp;当项目需要和 C 语言配合时，不用 `nullptr` 更好移植。
+
+
+#### `::` 作用域符
+
+- `::` ：获取全局变量
+- `class::` ：获取类的成员
+- `namespace::` : 获取命名空间内的声明
+
+<details><summary>:: 使用</summary> 
+
+```cpp
+class A {
+public:
+	static int s_x; // 类 A 的 x（A::x）
+};
+
+int g_x = 0;        // 全局（::）的 x
+
+int main() 
+{
+	::g_x = 1;      // 设置全局的 x 的值为 1
+
+	A::s_x = 2;     // 设置类 A 的 x 为 2
+
+	int x = 0;    // local x
+	x = 3;        // local x 的值为 3
+}
+
+```
+
+</details>
+
+
+#### `using` 与 `namespace`
+
+&emsp;&emsp; `using` 可以引入整个 `namespace` 中的声明，或者引入某个 `namespace` 中某个单独的声明。
+
+- 头文件中不要使用 `using` 声明，避免被多次包含
+- 在稍大的工程中，尽量不要一次性引入整个命名空间的声明，避免产生混淆
+
+
+<details> <summary> 混淆示范 </summary>
+
+```C++
+```cpp
+void swap(int&, int&);
+
+int main() 
+{
+	using namespace std;
+	
+	int i = 0, j = 0;
+	swap(i, j);	// 用的那个 swap?
+
+	// 可以直接用域操作符使用
+	std::cout << i << std::endl;
+
+	// 需要多次使用时，可以用 using 引入单个声明（也要确保不会冲突）
+	using std::cout;
+	using std::endl;
+	cout << x << endl;
+}
+```
+
+</details>
+
+
+&emsp;&emsp; `using` 还可以用来定义类型别名，比 `typedef` 直观许多
+
+
+<details> <summary> 定义类型别名 </summary>
+
+```C++
+using pstring = char*;
+const pstring p = 0;   // 指向char的常量指针
+const pstring *pp;     //  指向char的常量指针的指针
+```
+
+
+</details>
+
+
+#### `constexpr` 常量表达式 
+
+&emsp;&emsp;一些编译时就能得到结果的表达式，称为常量表达式，加上 `constexpr` 限定符可以让编译器帮助判断该表达式是否为常量表达式。若一个对象被指为 `constexpr`，则其也为 `const`。
+
+&emsp;&emsp;`constexpr` 修饰函数时，编译器也会判断该函数的形参，返回值，被调用的实参是否为 `constexpr`，函数只能有一个 `return`。这些函数的调用都会被内联 `inline`，所有常量表达式在编译后并直接被字面值替代。
+

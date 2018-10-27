@@ -1,0 +1,758 @@
+---
+layout: post
+title: "类"
+date: 2018-10-26 09:50:13
+update: 
+categories: C++
+img:
+---
+- [类基础](#类基础)
+	- [数据成员](#数据成员)
+		- [const成员/&成员](#const成员成员)
+		- [定义常量](#定义常量)
+		- [mutabal](#mutabal)
+		- [volitale关键字](#volitale关键字)
+	- [类型成员](#类型成员)
+		- [局部类](#局部类)
+	- [函数成员](#函数成员)
+		- [const成员函数](#const成员函数)
+	- [构造函数](#构造函数)
+		- [(合成的)默认构造函数 Synthesized Default Constructor](#合成的默认构造函数-synthesized-default-constructor)
+		- [成员初始化列表](#成员初始化列表)
+		- [委托构造函数 Delegating Constructor](#委托构造函数-delegating-constructor)
+		- [转换构造函数 Converting Constructor](#转换构造函数-converting-constructor)
+		- [explicit（显式）构造函数](#explicit显式构造函数)
+		- [类型转换运算符](#类型转换运算符)
+	- [析构函数](#析构函数)
+	- [拷贝控制](#拷贝控制)
+		- [拷贝构造函数](#拷贝构造函数)
+		- [拷贝赋值运算符 overloaded operator](#拷贝赋值运算符-overloaded-operator)
+		- [移动构造函数](#移动构造函数)
+		- [移动赋值运算符](#移动赋值运算符)
+		- [值类与引用类](#值类与引用类)
+- [访问控制](#访问控制)
+	- [继承 Inheritance](#继承-inheritance)
+	- [隐藏](#隐藏)
+	- [其他访问控制限定符](#其他访问控制限定符)
+		- [静态 static](#静态-static)
+		- [友元 friend](#友元-friend)
+		- [`final`](#final)
+		- [隐式 slicing](#隐式-slicing)
+		- [突破private](#突破private)
+
+
+	Member修饰符有哪些，Register？
+	可以被继承的成分？Ctor/dtor
+
+### 类基础
+
+#### 数据成员
+
+
+
+访问成员时，实际上是通过一个隐式指针this访问的
+this 默认类型为 class * const，是一个常指针，在某些成员函数中，若不想改变成员的值，则可以将this声明为指向常量的常指针 const class * const，声明方法
+	returnType fun() const {}
+若const成员函数返回*this，这个*this会自动变为常量引用
+
+
+编译器处理类时，先编译成员的声明再编成员函数
+在类外声明或定义函数需要用作用域运算符 ClassName::MemberFunction()
+返回this的函数
+	className& func() {
+		return *this; //左值返回
+	}
+
+this指针
+	• this指针是指向这个类的指针，类型为 T* const
+	• 类的每个成员函数隐式传入 T* const this
+		- 每个函数就是靠this指针来决定执行类对象
+	• 全局函数，static函数都不能使用this
+	• this在成员函数执行开始前构造，在成员结束后清除
+		- this只在成员函数中才有定义，才可以被使用
+	• this不占用对象的空间
+	• this指针可能会被编译器放到堆，栈，或者寄存器上
+		- 编译器可能会优化this指针的传递效率
+		- cdecl调用约定中有thiscall的约定，讲this放在寄存器上
+
+1. `this` 指针是一个隐含于每一个非静态成员函数中的特殊指针。它指向正在被该成员函数操作的那个对象。
+2. 当对一个对象调用成员函数时，编译程序先将对象的地址赋给 `this` 指针，然后调用成员函数，每次成员函数存取数据成员时，由隐含使用 `this` 指针。
+3. 当一个成员函数被调用时，自动向它传递一个隐含的参数，该参数是一个指向这个成员函数所在的对象的指针。
+4. `this` 指针被隐含地声明为: `ClassName *const this`，这意味着不能给 `this` 指针赋值；在 `ClassName` 类的 `const` 成员函数中，`this` 指针的类型为：`const ClassName* const`，这说明不能对 `this` 指针所指向的这种对象是不可修改的（即不能对这种对象的数据成员进行赋值操作）；
+5. `this` 并不是一个常规变量，而是个右值，所以不能取得 `this` 的地址（不能 `&this`）。
+6. 在以下场景中，经常需要显式引用 `this` 指针：
+    1. 为实现对象的链式引用；
+    2. 为避免对同一对象进行赋值操作；
+    3. 在实现一些数据结构时，如 `list`。
+
+##### const成员/&成员
+
+
+
+
+##### 定义常量
+
+A: 如何在类中定义常量？
+Q: 如果你想得到一个可用于常量表达式中的常量，例如数组大小的定义，那么你有两种选择：
+
+	class X {
+		static const int c1 = 7;
+		enum { c2 = 19 };
+
+		char v1[c1];
+		char v2[c2];
+
+		// ...
+	};
+一眼望去，c1的定义似乎更加直截了当，但别忘了只有static的整型或枚举型量才能如此初始化。这就很有局限性，例如：
+	class Y {
+		const int c3 = 7;		// error: not static
+		static int c4 = 7;		// error: not const
+		static const float c5 = 7;	// error not integral
+	};
+我还是更喜欢玩“enum戏法”，因为这种定义可移植性好，而且不会引诱我去使用非标准的“类内初始化”扩展语法。
+
+
+##### mutabal
+
+可变数据成员 Mutable Data Member
+即使是const的类，标记了mutable的成员也是可变的
+
+在C++中，mutable也是为了突破const的限制而设置的。被mutable修饰的变量(mutable只能由于修饰类的非静态数据成员)，将永远处于可变的状态，即使在一个const函数中。
+
+#### 类型成员
+
+
+• 类除了可以定义数据成员和函数成员，还可以定义类型成员
+std::vector<T>::iterator 被编译器假定为数据成员，而不是类型成员
+在作为参数传递时要显式声明为 typename std::vector<T>::iterator
+
+##### 局部类
+局部类不能访问函数作用域中的变量，只能访问外层作用域中的类型吗，静态变量，枚举成员
+
+#### 函数成员
+
+定义在类内部的函数是隐式的inline函数，所以不要在类内写太长的函数，最好是接口和实现分开
+
+函数前的返回类型是在类的作用域之外的
+	windows_mgr::ScreenIndex window_mgr::func(const Screen &s) {} // 返回处不访问类作用域则ScreenIndex视为未声明
+
+Sales_data obj; // 声明了一个对象
+Sales_data obj(); // 声明了一个函数
+
+
+##### const成员函数
+
+
+
+
+5.函数前的const和函数后的const
+前面使用const 表示返回值为const，如果函数返回值采用“值传递方式”，由于函数会把返回值复制到外部临时的存储单元中，加const 修饰没有任何价值。如果给以“指针传递”方式的函数返回值加const 修饰，那么函数返回值（即指针）的内容不能被修改，该返回值只能被赋给加const 修饰的同类型指针。
+后面加 const是const成员函数，在函数定义和函数声明中都要加const.
+const数据成员和const成员函数
+const修饰类的数据成员，表示成员常量，不能被修改，同时它只能在初始化列表中赋值。
+const成员函数应该在函数原型说明和函数定义中都增加const限定。
+对于const类对象/指针/引用，只能调用类的const成员函数，因此，const修饰成员函数的最重要作用就是限制对于const对象的使用。
+
+const成员函数不被允许修改它所在对象的任何一个数据成员。
+
+const修饰类对象表示该对象为常量对象，其中的任何成员都不能被修改。对于对象指针和对象引用也是一样。
+
+const成员函数
+	• 若一个成员函数不改变数据成员的内容，则其需要被声明为const成员函数 (const-correctness)
+	• 用mutable修饰的变量可以在const成员函数中进行更改
+	class C{
+	public:
+		void inc() const {
+			++m;
+			// ++n; // 编译器会提示表达式是无法修改的左值
+		}
+	private:
+		mutable int m;
+		int n;
+	}
+
+
+根据const重载函数
+	public:
+	Screen &display(ostream &os) {
+		do_display(os); return *this;
+	}
+	const Screen &display(ostream &os) const {
+		do_display(os); return *this;
+	}
+	private:
+	void do_display(ostream &os) const {
+		os << contents;
+	}
+
+IO类不能拷贝，只能通过引用来传递
+默认情况下，拷贝类对象只是拷贝类对象的数据成员
+
+
+
+
+
+#### 构造函数
+
+
+
+	• 构造函数的名字和类名字相同，但是没有返回类型
+	• 类的对象创建时执行构造函数 
+	• 构造函数不能声明为const，当一个类声明为const时，直到构造函数执行完，类都不具有const属性
+	• 构造函数初始值列表，在构造函数函数体之前执行，按类成员定义的顺序初始化，（不是构造函数参数顺序，最好两者保持一致）对于类内值来说，先执行初始值列表初始化，再执行类内成员默认初始化，然后再执行构造函数体
+	ClassName(const string &S, const int n) : bookNo(S), units_sold(n) {}
+	class x{
+		int i; 
+		int j;
+		x(int val) : j(val), i(j) {} // 错误示范
+	}
+	
+##### (合成的)默认构造函数 Synthesized Default Constructor
+	• ClassName( ) = default;
+	• 没有定义构造函数时，编译器会生成一个默认的构造函数，拷贝，赋值，析构函数在未定义的情况也会由编辑器提供合成的默认函数
+	• 定义了构造函数之后，除非手动指定一个=default，否则没有默认构造函数
+	• 存在类内初始值时，类成员时通过默认构造函数初始化，否则类成员默认初始化
+	• 合成的默认构造函数不会对内置类型或复合类型（引用和const）赋初始值，这些类型最好带有类内初始值，或自定义默认构造函数
+	• 如果类成员包含了其他类，且某个类没有默认的构造函数，则必须自定义默认构造函数
+	• 所有成员都有类内初始值时，才适合用合成的默认构造函数（没有初始值的被默认初始化）
+
+
+派生类
+	• 构造时，先调用基类的构造函数，再调用派生类的构造函数
+	• 析构时，先调用派生类的析构函数，再调用基类的构造函数
+	• 派生类可以隐式的转换为基类，若派生类向基类对象拷贝，移动，赋值，或者拷贝，会将派生类多余的部分切掉
+	• 不存在基类到派生类的隐式类型转换
+	• 派生类构造函数要调用基类的构造函数
+	Bulk_quote(const string& book, double p, size_t qty, double disc) : Quote(book, p), min_qty(qty), discount(disc) {}
+	若不委托构造，基类部分会像数据成员一样默认初始化
+	• 继承构造函数
+	using Base::Base;
+	derived(parms) : base(args) {}
+	• 默认实参不被继承
+	• 默认构造，拷贝构造，移动构造，不会被自动继承，只能被合成
+	• 派生类的数据成员和继承自基类的数据成员不一定时连续存储的
+	• 使用using可以把一个函数名的所有重载函数添加到派生类中
+	• 派生类使用基类构造函数
+	D(const D&d) : Base(d) {}
+	D(D&& d) : Base(std::move(d)) {}
+	D &operator=(const D &rhs) {
+		Base::operator=(rhs); // 为基类部分赋值
+		…
+		return *this;
+	}
+
+
+##### 成员初始化列表
+
+好处
+
+* 更高效：少了一次调用默认构造函数的过程。
+* 有些场合必须要用初始化列表：
+  1. 常量成员，因为常量只能初始化不能赋值，所以必须放在初始化列表里面
+  2. 引用类型，引用必须在定义的时候初始化，并且不能重新赋值，所以也要写在初始化列表里面
+  3. 没有默认构造函数的类类型，因为使用初始化列表可以不必调用默认构造函数来初始化，而是直接调用拷贝构造函数初始化。
+
+##### 委托构造函数 Delegating Constructor
+
+	Sales_data(string s, int cnt, double price) : bookNo(s), units(cnt), revenue(price) {}
+	Sales_data() : Sales_data(" ", 0, 0) {}
+	Sales_data(string s) : Sales_data(s, 0, 0) {}
+	Sales_data(istream &is) : Sales_data() { read(is, *this);}
+	
+
+
+在 C++11 中，派生类能够重用其直接基类定义的构造函数。
+
+```cpp
+class Derived : Base {
+public:
+    using Base::Base;
+    /* ... */
+};
+```
+
+如上 using 声明，对于基类的每个构造函数，编译器都生成一个与之对应（形参列表完全相同）的派生类构造函数。生成如下类型构造函数：
+
+```cpp
+derived(parms) : base(args) { }
+```
+
+##### 转换构造函数 Converting Constructor
+为类定义隐式转换规则，单参数的构造函数即转换规则
+具有构造函数的类型可以隐式转换为class 比如上面的string->Sales_data
+[编译器只允许进行一步类型转换]
+对下列函数执行 a.combine("a");
+	1. Sales_data& combine(Sales_data);
+	通过，string转换到类类型
+	2. Sales_data& combine(Sales_data&);
+	不通过，非常量临时对象不能引用
+	3. Sales_data& combine(const Sales_data&);
+	通过
+	4. const Sales_data& combine(const Sales_data&) const;
+	通过
+
+
+##### explicit（显式）构造函数
+
+
+
+显式类型转换/抑制隐式转换 Explicit
+在构造函数前加explicit，声明后的构造函数只能直接初始化
+	• 只对一个实参的构造函数有效（多参数的不能进行隐式类型转换）
+	• 只能用于类内声明
+	• 对于只能显式转换的构造函数，可以手动创建临时对象
+	item.combine(Sale_data(null_book));
+	item.combine(static_cast<Sales_data>(cin));
+	• vector的单参数构造函数为explicit，若不为explicit，则
+	vector<type> a(3.14); // 会生成size为3的vector
+
+explicit 修饰的构造函数可用来防止隐式转换
+
+<details><summary>explicit 使用</summary> 
+
+```cpp
+class Test1
+{
+public:
+    Test1(int n)            // 普通构造函数
+    {
+        num=n;
+    }
+private:
+    int num;
+};
+
+class Test2
+{
+public:
+    explicit Test2(int n)   // explicit（显式）构造函数
+    {
+        num=n;
+    }
+private:
+    int num;
+};
+
+int main()
+{
+    Test1 t1=12;            // 隐式调用其构造函数，成功
+    Test2 t2=12;            // 编译错误，不能隐式调用其构造函数
+    Test2 t2(12);           // 显式调用成功
+    return 0;
+}
+```
+
+</details>
+
+##### 类型转换运算符
+
+returnType operator int() const {return val;}
+	class cs;
+	cs = 4; // 转换构造函数
+	int a = ci + 3; // 类转换为int
+	• （隐式）的用户定义类型转换可以与一个标准的内置类型转换一起使用，最多可以进行两步类型转换
+	• 使用显式类型转换
+	explicit operator type() const {}
+	static_cast<int>(cs) += 3;
+	• 当在以下情况时，表达式被用作条件，显式转换会自动应用
+		- if	while	do	for
+		!	||	&&	?:
+	• 类类型转换时，最好不要提供一个以上的算术类型转换，例如如果同时有int，double，则很容易产生二义性
+	• 提供同一种类型的类类型转换和转换构造函数，导致在混合算术运算中产生二义性
+
+
+#### 析构函数
+
+析构函数
+释放对象使用的资源，销毁对象的非static成员
+	~Foo(); // 没有返回值，不接受参数，不能被重载
+
+	• 成员按初始化时的逆序销毁
+	• 析构成员的部分是隐式的，销毁类成员需要成员的析构函数，销毁内置变量什么都不用做
+
+析构函数发生的时间
+	1. 变量离开作用域时
+	2. 动态分配的对象的指针被delete时
+	3. 临时对象，创建它的完整表达式结束时
+	4. 容器被销毁时
+	5. 一个对象被销毁，它的成员被销毁
+
+合成的析构函数 Synthesized Deconstructor
+	1. 被删除，防止该类型的对象被销毁
+	2. 函数体为空
+
+#### 拷贝控制
+
+
+
+拷贝	拷贝构造函数	copy construtor
+移动	移动构造函数	move constructor
+赋值	拷贝赋值运算符	copy-assignment operator
+	移动赋值运算符	move-assignment operator
+销毁	析构函数	destructor
+
+直接初始化：匹配最佳构造函数
+拷贝初始化：使用使拷贝构造函数或者移动构造函数
+
+三/五法则
+	1. 不定义任何拷贝控制函数
+	2. 定义拷贝构造函数，拷贝赋值运算符，析构函数
+	3. 定义拷贝构造函数，拷贝赋值运算符，析构函数，移动构造函数，移动构造运算符
+
+=default
+可以显式要求编辑器生成合成版本
+	Sales_data() = default;
+	Sales_data( const Sales_data& ) =  default;
+	Sales_data& operator=( const Sales_data &);
+	~Sales_data() = default;
+	Sales_data& Sales_data::operator=(const Sales_data &) = default;
+
+=delete
+在声明之后使用=delete可以删除函数，删除的函数不能使用
+	• 可以删除一般函数，引导函数匹配
+	• 不能删除析构函数
+	• 阻止拷贝与赋值
+	NoCopy(const Copy &) = delete;
+	NoCopy& operator=(const Copy &) = delete; 
+	
+	• 如果一个类有一个数据成员不能默认构造，拷贝，赋值，或销毁，则对应的数据成员被删除
+
+
+
+##### 拷贝构造函数
+
+拷贝构造函数
+拷贝构造函数定义了同类型拷贝时的操作，第一个参数一般必须为引用类型，任何额外参数都有默认值，一般为const class&, 通常不应该为explicit
+	class Foo {
+	public:
+		Foo(); // 默认构造函数
+		Foo(const Foo&); // 拷贝构造函数
+	};
+
+拷贝初始化发生的情况
+	1. = 赋值运算符
+	编译器允许优化来绕过拷贝赋值运算符
+	string null_book = "9-999-99999-9";
+	string null_book("9-999-99999-9"); // 略过拷贝/移动构造函数
+	2. 将实参传递给非引用形参
+	3. 返回类型为非引用类型的函数返回一个对象
+	4. 花括号列表初始化数组中的元素或聚合类成员
+	5. 某些类类型分配对象，例如insert，push，使用emplace为直接初始化
+
+合成拷贝构造函数 Synthesized copy constructor
+	1. 用来阻止拷贝（被删除的情况下）
+	2. 将每个非static对象拷贝一次（对类成员调用拷贝构造函数，内置变量直接拷贝，可以拷贝数组）
+	3. 合成拷贝赋值运算符（Synthesized copy-assignment operator）
+
+##### 拷贝赋值运算符
+左侧运算对象绑定到隐式的this，右侧对象显式传递
+	Sales_data& Sales_data::operator=(const Sales_data& rhs) {
+		bookNo = rhs.bookNo;
+		units_sold = rhs.units_sold;
+		revenue = rhs. revenue;
+		return *this;
+	}
+
+
+2.拷贝构造函数在什么时候被调用，什么是深浅拷贝。
+一个对象以值传递的方式传入函数体 。
+一个对象以值传递的方式从函数返回 。
+一个对象需要通过另外一个对象进行初始化。
+       在某些状况下，类内成员变量需要动态开辟堆内存，如果实行位拷贝，也就是把对象里的值完全复制给另一个对象，如A=B。这时，如果B中有一个成员变量指针已经申请了内存，那A中的那个成员变量也指向同一块内存。这就出现了问题：当B把内存释放了（如：析构），这时A内的指针就是野指针了，出现运行错误。
+       浅拷贝指的是在对象复制时，只是对对象中的数据成员进行简单的赋值，上面的例子都是属于浅拷贝的情况，默认拷贝构造函数执行的也是浅拷贝。
+       深拷贝的情况下，对于对象中动态成员，就不能仅仅简单地赋值了，而应该重新动态分配空间。
+
+
+##### 移动构造函数
+
+
+移动
+
+std::move
+    • std::move不提供using声明,必须使用std::move
+    int &&rr2 = i * 42; // rvalue
+    int &&rr3 = std::move(rr3);
+除了对rr2赋值或销毁，不会再使用它，移后源对象只能被销毁或赋新值
+
+
+移动构造函数
+移动构造函数必须确保移后源对象是可以被销毁的
+	StrVec(Strvec &&c) noexcept : elements(s.elements), firstfree(s.firstfree), cap(s.cap) {
+		s.elements = s.first_free = s. cap = nullptr;
+	}
+	• 同时有移动构造函数与拷贝构造函数时，用函数匹配来决定调用那个，若没有移动构造函数，则右值会被拷贝
+
+
+合成的移动构造函数
+	• 不会被隐式删除，但使用=default时，如果不能合成，则其会被定义成被删除，在以下场合不能合成：
+		a. 类成员定义了拷贝构造，未定义移动构造函数
+		b. 类成员的移动构造显式定义被删除
+		c. 析构函数被删除
+		d. 类成员是const或引用
+
+##### 移动赋值运算符
+移动后源对象必须可析构
+	StrVec& StrVec::operator=(StrVec &&rhs) noexcept {
+		if(this != &rhs) {
+			free();
+			elements = rhs.elements;
+			firstfree = rhs.firstfree;
+			cap = rhs.cap; 
+			rhs.elements =  rhs.firstfree = rhs.cap = nullptr; 
+		}
+		return *this;
+	}
+	
+
+移动迭代器：解引用后得到右值
+得到右值后，调用移动构造函数进行copy
+	auto last = uninitialiazed_copy(make_move_iterator(begin()), make_move_iterator(end()), first);
+
+
+• 使用虚析构函数将会阻止类合成移动操作
+如果派生类需要移动操作，则需要从基类开始定义，还要定义拷贝
+
+##### 值类与引用类
+
+行为像值的类
+	• 对于类管理的资源，每个对象都应该有一份自己的拷贝
+	• 拷贝构造函数完成成员值的拷贝，而不是拷贝指针
+	• 析构函数释放成员
+	• 赋值拷贝运算符释放自己的资源，拷贝新的资源
+	• 将对象赋予自身也要能正常工作
+	HasPtr& HasPtr::operator=(const HasPtr &rhs) {
+		auto *newPtr = new string(*(rhs.ps));
+		delete ps;
+		ps = newPtr;
+		i = rhs.i;
+		return *this;
+	}
+	
+	
+行为像指针的类
+	• 可以使用引用计数，也可以使用shared_Ptr
+	HasPtr& operator=(const HasPtr &rhs) {
+		++rhs.use;
+		if(--*use == 0) {
+			delete ps;
+			delete use;
+		}
+		ps = rhs.ps;
+		use = rhs.use;
+		i = rhs.i;
+		return *this;
+	}
+	
+交换操作
+对于需要进行重排的元素，需要定义swap
+值传递，自动处理自赋值状况，异常安全
+	class HasPtr {
+		friend void swap(HasPtr &lhs, HasPtr &rhs);
+	}
+	inline void swap(HasPtr &lhs, HasPtr &rhs) {
+		using std::swap; // 不会屏蔽特定的swap
+		swap(lhs.ps, rhs.ps);
+		swap(lhs.i, rhs.i);
+	}
+	HasPtr& HasPtr::operator=(HasPtr rhs) {
+		swap(*this, rhs);
+		return *this;
+	}
+	
+即是移动赋值运算符，也是拷贝赋值运算符，swap之后的原指针被销毁
+	class HasPtr{
+	public:
+		HasPtr(HasPtr &&p) noexcept : ps(p.ps), i(p.i) {
+			p.ps = nullptr;
+		}
+		HasPtr& operator=(HasPtr rhs) {
+			swap(*this, rhs); 
+			return *this;
+		}
+	}
+
+### 访问控制
+
+访问说明符 Access Specifiers
+public：整个程序都可以访问（struct 默认）
+private：只可以被类成员函数访问（class 默认）
+
+#### 继承 Inheritance
+
+访问控制与继承
+一般控制策略：
+
+1. 普通用户：使用类对象，只能访问公开成员
+2. 类设计者：使用成员，友元，公有私有都能访问
+3. 派生类：访问受保护的
+
+| 基类 base class| 派生类 derived class|其他对象 other object	| 友元 friend
+| :-: |:-: |:-: |:-: |
+|public|	✔|	✔|	✔|	✔|
+|private|	✔|	✖|	✖|	✔|
+|protect|	✔|	✔|	✖|	✔|
+
+```C++
+class B {
+	// 基类访问说明符
+	public : int pub_m;
+	protected: int  prot_m;
+	private: int priv_m;
+}
+pub_B : public B {} // 派生访问说明符
+```
+
+
+public继承，protected 继承， private 继承
+将父类相应访问权限的成员按继承方式降档
+
+|class B|	pub_B : public B |	Priv_B : private B |	pub_pub_B : public pub_B|	pub_priv_B : public Priv_B |
+| :-: |:-: |:-: |:-: |:-: |
+|pub_m|	✔|	✔|	✔|	✖|
+|prot_m|	✔|	✔|	✔|	✖|
+|priv_m|	✖|	✖|	✖|	✖|
+
+	• 派生类能直接访问基类的protected成员
+	• 友元关系不能继承，但若是基类的友元，扔到访问派生类中的基类部分
+	• 可以在派生类中使用 Base::member 可以改变访问性
+
+
+#### 隐藏
+有同名数据成员的继承
+例：
+	class A {
+	public:
+		int a;
+		A() { a = 1; }
+		void print() {
+			cout << a << endl;
+		}
+	};
+	
+	class B : public A {
+	public:
+		int a;
+		B() { a = 2; }
+	};
+	
+	int main() {
+		B b;
+		b.print(); // 1
+		cout << b.a << endl; // 2
+	}
+	
+b.print()调用时，语句在A的域内，等同于A::print()，输出A.a，b.a等同于B::a，B在A的内层域内，B.a会覆盖掉A.a
+
+#### 其他访问控制限定符
+
+##### 静态 static
+
+
+内存分配
+类的静态成员变量和函数中的静态变量一样,在编译的时候就分配内存了,存放在data段，直到程序退出才释放,并不是随着对象的删除而释放的。
+
+在类里面
+类体中的数据成员的声明前加上static关键字，该数据成员就成为了该类的静态数据成员。和其他数据成员一样，静态数据成员也遵守public/protected/private访问规则。同时，静态数据成员： 
+1).静态数据成员实际上是类域中的全局变量。所以，静态数据成员的定义(初始化)不应该被放在头文件中;
+2).静态数据成员被 类 的所有对象所共享，包括该类派生类的对象。即派生类对象与基类对象共享基类的静态数据成员;
+3).静态数据成员可以成为成员函数的可选参数，而普通数据成员则不可以;
+4).★静态数据成员的类型可以是所属类的类型，而普通数据成员则不可以。普通数据成员的只能声明为 所属类类型的 指针或引用;
+5).★const函数中可以改变类的static成员。不能改变普通成员；
+
+静态成员函数：
+静态成员函数是为类的全体对象服务的即用事例化该类就可以访问静态成员函数了。这样就不需要定义一个全局函数了，有下面的特点
+1).静态成员函数的地址可用普通函数指针储存，而普通成员函数地址需要用 类成员函数指针来储存;
+2).静态成员函数不可以调用类的非静态成员。因为静态成员函数不含this指针;
+3).静态成员函数不可以同时声明为 virtual、const、volatile函数;
+
+
+
+1. 修饰普通变量，修改变量的存储区域和生命周期，使变量存储在静态区，在 main 函数运行前就分配了空间，如果有初始值就用初始值初始化它，如果没有初始值系统用默认值初始化它。
+2. 修饰普通函数，表明函数的作用范围，仅在定义该函数的文件内才能使用。在多人开发项目时，为了防止与他人命令函数重名，可以将函数定位为 static。
+3. 修饰成员变量，修饰成员变量使所有的对象只保存一个该变量，而且不需要生成对象就可以访问该成员。
+4. 修饰成员函数，修饰成员函数使得不需要生成对象就可以访问该函数，但是在 static 函数内不能访问非静态成员。
+
+• 静态成员
+class Base {};
+class D1 : public Base {}; // Base是D1的直接基类 Direct Base Class
+class D2 : public D1 {}; // Base是D2的间接基类 Indirect Base Class
+类的静态成员 Static Member
+通过static声明，类的静态成员存在于任何对象之外，类的对象中不包含static数据成员相关的数据
+
+声明与定义
+	• 声明static关键字只能在类内，一般和全局变量一样在类外定义并初始化
+	class Account{
+		static double interestRate;
+	}
+	double Account::interestRate = initRate();
+	• 一旦定义，static数据成员存在程序的整个生命周期之中
+	• 在类内可以用constexpr定义并提供初始值，（最好在类外也声明）
+	class Account {
+		static constexpr int period = 30;
+	}
+	constexpr int Account::period;
+	• 在类外可以用作用域运算符访问 
+	auto ir = Account::interestRate;
+	r = Account::rate();
+	
+静态数据成员的作用
+	• 可以是不完全类型 imcomplete type
+	class Screen; // 前向声明 forward declaration， 可以用来声明指针和应用，作为参数和返回类型
+	• 可以作为默认实参
+	class Bar {
+	public:
+		Bar& defaultLen(int = dLength);
+	private:
+		static Bar mem1;
+		static const int dLength;
+	}
+	• static成员函数也不包含this指针，也不能声明为const
+
+
+
+##### 友元 friend 
+在类内部添加一道friend函数或类声明，允许其他类或函数访问它的非public成员
+	• 友元类可以访问该类的非公有成员
+	• 友元不具有传递性
+	• 重载函数必须每一个都声明为友元才行
+	• 友元声明不算做函数声明，仅仅影响访问权限（声明友元前必须要先声明函数才算该函数存在）
+	• 声明友元顺序：类A指定类B的F函数为友元函数
+		- 定义类B，声明F而不定义F
+		- 定义类A，声明F为友元函数
+		- 定义F，可以使用A的成员
+
+* 能访问私有成员  
+* 破坏封装性
+* 友元关系不可传递
+* 友元关系的单向性
+* 友元声明的形式及数量不受限制
+
+
+友元函数继承乐。。
+https://blog.csdn.net/baidu_35692628/article/details/78084016
+https://blog.csdn.net/yucan1001/article/details/6926087
+
+##### `final`
+	• 如果一个基类不想被继承，可以加上final限定符
+	class Noderived final {}
+
+##### 隐式 slicing
+```C++
+Object slicing
+int main()
+{
+    Derived d1(5);
+    Derived d2(6);
+    Base &b = d2;
+ 
+    b = d1; // this line is problematic
+ 
+    return 0;
+}
+```
+Vptr is not copied..
+
+
+##### 突破private
+https://blog.csdn.net/jiange_zh/article/details/52191144

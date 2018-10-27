@@ -1,0 +1,334 @@
+
+- [C++与C的区别](#c与c的区别)
+- [宏，inline，const](#宏inlineconst)
+    - [define](#define)
+    - [`inline`](#inline)
+        - [编译器对 inline 函数的处理步骤](#编译器对-inline-函数的处理步骤)
+        - [优缺点](#优缺点)
+        - [c语言inline](#c语言inline)
+- [extern](#extern)
+- [C语言的坑](#c语言的坑)
+    - [printf](#printf)
+
+
+### C++与C的区别
+
+- 编程范式：面向对象（多态），泛型编程（模板）
+- 资源管理 new & delete, shared_ptr
+- STL库
+
+### 宏，inline，const
+
+
+#### define
+* 宏定义可以实现类似于函数的功能，但是它终归不是函数，而宏定义中括弧中的“参数”也不是真的参数，在宏展开的时候对 “参数” 进行的是一对一的替换。
+
+
+
+宏定义
+特性	const	#define	inline
+本质	编译器检查的常量变量	预处理器进行字符替换	编译器支持的内联函数
+变量类型	有，并且有类型安全检查	无	有参数类型安全检查
+内存	保存在符号表中，在第一次使用时分配存储空间，此后不再分配	每次使用时分配一次空间	
+例：
+宏定义只是简单替换字符，代入表达式一定要主要加括号
+	#define SUB(x, y) x-y
+	#define ACCESS_BEFORE(element, offset, value) *SUB(&element, offset) = value
+	
+	int main() {
+		int array[10] = {1,2,3,4,5,6,7,8,9, 10};
+		ACCESS_BEFORE(array[5], 4, 6);
+		// *SUB(&array[5], 6) = 6;
+		// *&array[5] - 6 = 6;
+	}
+编译器提示出错：表达式必须是可以赋值的左值
+
+例：
+define一个常数，说明1年中有多少秒:
+	#define SECONDS_PER_YEAR (60 * 60 * 24 * 365)UL
+UL用于表示无符号长整形，预处理器可以进行计算
+
+例：
+define一个max
+	#define max(a, b) ((a) > (b)? (a) : (b))
+
+
+#### `inline`
+
+* 相当于把内联函数里面的内容写在调用内联函数处；
+* 相当于不用执行进入函数的步骤，直接执行函数体；
+* 相当于宏，却比宏多了类型检查，真正具有函数特性；
+* 不能包含循环、递归、switch 等复杂操作；
+* 类中除了虚函数的其他函数都会自动隐式地当成内联函数。
+
+
+<details><summary>inline 使用</summary> 
+
+
+```cpp
+// 声明1（加 inline，建议使用）
+inline int functionName(int first, int secend,...);
+
+// 声明2（不加 inline）
+int functionName(int first, int secend,...);
+
+// 定义
+inline int functionName(int first, int secend,...) {/****/};
+```
+
+</details>
+
+
+##### 编译器对 inline 函数的处理步骤
+
+1. 将 inline 函数体复制到 inline 函数调用点处； 
+2. 为所用 inline 函数中的局部变量分配内存空间； 
+3. 将 inline 函数的的输入参数和返回值映射到调用方法的局部变量空间中； 
+4. 如果 inline 函数有多个返回点，将其转变为 inline 函数代码块末尾的分支（使用 GOTO）。
+
+##### 优缺点
+
+优点
+
+1. 内联函数同宏函数一样将在被调用处进行代码展开，省去了参数压栈、栈帧开辟与回收，结果返回等，从而提高程序运行速度。
+2. 内联函数相比宏函数来说，在代码展开时，会做安全检查或自动类型转换（同普通函数），而宏定义则不会。 
+3. 在类中声明同时定义的成员函数，自动转化为内联函数，因此内联函数可以访问类的成员变量，宏定义则不能。
+4. 内联函数在运行时可调试，而宏定义不可以。
+
+缺点
+
+1. 代码膨胀。内联是以代码膨胀（复制）为代价，消除函数调用带来的开销。如果执行函数体内代码的时间，相比于函数调用的开销较大，那么效率的收获会很少。另一方面，每一处内联函数的调用都要复制代码，将使程序的总代码量增大，消耗更多的内存空间。
+2. inline 函数无法随着函数库升级而升级。inline函数的改变需要重新编译，不像 non-inline 可以直接链接。
+3. 是否内联，程序员不可控。内联函数只是对编译器的建议，是否对函数内联，决定权在于编译器。
+
+
+
+函数将在编译期被替换成嵌入的代码
+	• 必须与函数定义放在一起，声明最好也放
+	• 有循环或代码过于复杂不要用inline
+
+	内联函数 inline
+用inline标记的函数，编译器会将其内嵌到其他代码块中，省去调用过程
+	• 一般适用于规模小，流程直接，频繁调用的函数
+	• 一般不支持递归函数
+
+
+Inline
+Inline可能会造成目标码增大，增加缓存换页行为，降低 cache hit rate
+当inline函数很小时，生成的目标码会比调用函数的目标码更小，那么 cache hit rate 就能有效提高
+Inline 是个申请，编译器可以忽略，内含虚函数的函数会被忽略，scope 种包含使用函数指针调用的语句会被编译器忽略
+Inline函数是否真的变成inline取决于编译器，编译器可以开诊断：如果无法inline，编译器会返回一个 warning
+最好只将瓶颈函数inline/瘦身，将 inline 限制在小型，频繁被调用的函数上，最好是不用更改的函数
+
+声明方式
+	• 直接在定义前加 inline
+	• 在类内定义的函数默认为 inline
+	• 类内声明，类外定义
+
+Inline 函数定义通常需要被放在头文件内，因为编译器需要知道其具体实现才能为此优化（.NET CLI 可以在运行期inline…）
+tradeoff
+	• Inline函数可能不支持随库升级，因为其会被编进目标码里，不存在链接。Inline函数被更改之后，整个程序都需要被编译。无法动态链接。
+	• Inline函数难以调试，很多编译器只支持调式 debug 版的 inline函数（没有真的inlining）
+Template 通常也是编译期特化，有些 build 环境可以将其在链接期特化》。。
+
+##### c语言inline
+https://blog.csdn.net/liyuanbhu/article/details/42470577
+
+
+
+
+### extern
+
+3.extern "C" 的作用。
+实现C++与C及其它语言的混合编程.
+以int func(int, int)为例，C的编译器会将名字改编为_func, 而C++的编译器会改编为_func_int_int 或_funcii（各编译器不同）。
+
+如果这个函数在C中编译成库，目标文件中函数名为_func,当这个函数中C++中被调用时，C++的编译器就会到目标文件中寻找_funcii，结果找不到，出错。
+所以为了防止这种问题，在C++调用时，将函数声明前加个extern "C" 告诉C++的编译器，不要对名字再进修饰，而直接去找_func。
+
+extern "C"
+
+* 被 extern 限定的函数或变量是 extern 类型的
+* 被 `extern "C"` 修饰的变量和函数是按照 C 语言方式编译和连接的
+
+`extern "C"` 的作用是让 C++ 编译器将 `extern "C"` 声明的代码当作 C 语言代码处理，可以避免 C++ 因符号修饰导致代码不能和C语言库中的符号进行链接的问题。
+
+<details><summary>extern "C" 使用</summary> 
+
+```cpp
+// #ifdef __cplusplus
+extern "C" {
+// #endif
+
+void *memset(void *, int, size_t);
+
+// #ifdef __cplusplus
+}
+// #endif
+```
+
+</details>
+
+链接指示，编译器应该支持C，也可以支持 "Ada", "Fortran" 等
+函数指针不兼容，不能乱赋值（标准不允许，但有些实现可能允许）
+如果链接指示函数的形参为函数指针，也必须是 C 函数指针，如果要兼容 C++ 函数指针，则需要使用 类型别名 typedef
+
+```C++
+	extern "C" {
+		int strcmp(const char*, const char*);
+	}
+	extern "C" void (*pf) (int); // 指针必须要有链接指示
+```
+
+
+### 类型修饰符
+
+https://blog.csdn.net/setflvet/article/details/6924878
+
+auto、static、register、extern、volatile、restrict
+
+
+__restrict限定符
+	• 告诉编译器该对象已经被指针引用，不能被其他方式访问
+
+#### static
+
+static,函数体，模块内外，类中，类静态成员,私有静态成员,静态成员函数,
+
+在所有函数体外定义的static变量表示在该文件中有效，不能extern到别的文件用；
+
+在函数体内定义的static表示只在该函数体内有效；
+
+static 关键字可用于声明变量、函数、类数据成员和类函数，主要用来控制变量的存储方式和可见性。
+在类里面
+类体中的数据成员的声明前加上static关键字，该数据成员就成为了该类的静态数据成员。和其他数据成员一样，静态数据成员也遵守public/protected/private访问规则。同时，静态数据成员： 
+1).静态数据成员实际上是类域中的全局变量。所以，静态数据成员的定义(初始化)不应该被放在头文件中;
+2).静态数据成员被 类 的所有对象所共享，包括该类派生类的对象。即派生类对象与基类对象共享基类的静态数据成员;
+3).静态数据成员可以成为成员函数的可选参数，而普通数据成员则不可以;
+4).★静态数据成员的类型可以是所属类的类型，而普通数据成员则不可以。普通数据成员的只能声明为 所属类类型的 指针或引用;
+5).★const函数中可以改变类的static成员。不能改变普通成员；
+
+
+
+
+在C语言中，static有一点稍微的不同。
+static 变量：
+1).变量会被放在程序的全局存储区中，这样可以在下一次调用的时候还可以保持原来的赋值。这一点是它与堆栈变量和堆变量的区别。 
+2).变量用static告知编译器，自己仅仅在变量的作用范围内可见。这一点是它与全局变量的区别。
+static函数
+1).静态函数会被自动分配在一个一直使用的存储区，直到退出应用程序实例，避免了调用函数时压栈出栈，速度快很多。
+2).static函数（也叫内部函数）只能被本文件中的函数调用，而不能被同一程序其它文件中的函数调用。
+
+• 在函数体，一个被声明为静态的变量在这一函数被调用过程中维持其值不变。
+• 在模块内（但在函数体外），一个被声明为静态的变量可以被模块内所用函数访 问，但不能被模块外其它函数访问。它是一个本地的全局变量。 
+• 在模块内，一个被声明为静态的函数只可被这一模块内的其它函数调用。那就是 ，这个函数被限制在声明它的模块的本地范围内使用。
+
+
+#### volatile
+
+```cpp
+volatile int i = 10; 
+```
+
+* volatile 关键字是一种类型修饰符，用它声明的类型变量表示可以被某些编译器未知的因素（操作系统、硬件、其它线程等）更改。所以使用 volatile 告诉编译器不应对这样的对象进行优化。
+* volatile 关键字声明的变量，每次访问时都必须从内存中取出值（没有被 volatile 修饰的变量，可能由于编译器的优化，从 CPU 寄存器中取值）
+* const 可以是 volatile （如只读的状态寄存器）
+* 指针可以是 volatile
+
+&emsp;&emsp; 与编译器，机器都有关
+比如程序包括一个由系统时钟改变的变量
+
+如果一个基本变量被volatile修饰，编译器将不会把它保存到寄存器中，而是每一次都去访问内存中实际保存该变量的位置上。这一点就避免了没有volatile修饰的变量在多线程的读写中所产生的由于编译器优化所导致的灾难性问题。所以多线程中必须要共享的基本变量一定要加上volatile修饰符。当然了，volatile还能让你在编译时期捕捉到非线程安全的代码。
+
+无法使用合成的拷贝控制函数操作 volatile 对象，想要操作必须自定义
+
+
+### struct 和 typedef struct
+
+#### C 中
+
+```c
+// c
+typedef struct Student {
+    int age; 
+} S;
+```
+
+等价于
+
+```c
+// c
+struct Student { 
+    int age; 
+};
+
+typedef struct Student S;
+```
+
+此时 `S` 等价于 `struct Student`，但两个标识符名称空间不相同。
+
+另外还可以定义与 `struct Student` 不冲突的 `void Student() {}`。
+
+#### C++ 中
+
+由于编译器定位符号的规则（搜索规则）改变，导致不同于C语言。
+
+一、如果在类标识符空间定义了 `struct Student {...};`，使用 `Student me;` 时，编译器将搜索全局标识符表，`Student` 未找到，则在类标识符内搜索。
+
+即表现为可以使用 `Student` 也可以使用 `struct Student`，如下：
+
+```cpp
+// cpp
+struct Student { 
+    int age; 
+};
+
+void f( Student me );       // 正确，"struct" 关键字可省略
+```
+
+二、若定义了与 `Student` 同名函数之后，则 `Student` 只代表函数，不代表结构体，如下：
+
+```cpp
+typedef struct Student { 
+    int age; 
+} S;
+
+void Student() {}           // 正确，定义后 "Student" 只代表此函数
+
+//void S() {}               // 错误，符号 "S" 已经被定义为一个 "struct Student" 的别名
+
+int main() {
+    Student(); 
+    struct Student me;      // 或者 "S me";
+    return 0;
+}
+
+
+
+### C语言的坑
+
+#### printf
+
+printf
+例：
+	printf("%d, %d", *ptr, *(++ptr));
+printf的输出的值是从右往左计算的，所以上面这个语句会输出一样的值
+
+例：
+	unsigned int i = 0x12345678;
+	unsigned char c = (unsigned char)i;
+	char* b = (char*)&i;
+	printf("%08x, %08x\n", c, *b); // 00000078, 00000078
+	
+	unsigned int i2 = 0xfffffff7;
+	char* b2 = (char&)&i2;
+	printf("%08x", *b2); // 0xfffffff7
+	// b2中为0xf7，但8位输出，有符号char，高位自动补1
+	
+x86系列中，默认内存都是按小端存储的（低地址存低位内容
+
+printf("%6.9s", s);
+小数点前是列宽（默认右对齐），小数点后是长度
+
+#### c语言中的const
+https://www.cnblogs.com/yangguang-it/p/6663930.html

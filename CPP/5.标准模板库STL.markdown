@@ -1,8 +1,8 @@
 ---
 layout: post
-title: "STL 简介与总结"
+title: "标准模板库 STL"
 date: 2018-09-07 16:53:59
-update: 2018-09-11 16:59:13
+update: 2018-10-25 16:59:13
 categories: C++
 img:
 ---
@@ -20,6 +20,7 @@ img:
     - [半连续内存顺序容器](#半连续内存顺序容器)
         - [deque](#deque)
         - [stack & queue](#stack--queue)
+    - [非连续内存顺序容器](#非连续内存顺序容器)
         - [list & forward_list](#list--forward_list)
     - [有序关联容器](#有序关联容器)
         - [set](#set)
@@ -29,6 +30,19 @@ img:
     - [无序关联容器](#无序关联容器)
 - [应用场合](#应用场合)
     - [迭代器失效](#迭代器失效)
+- [STL 库](#stl-库)
+    - [algorithm库](#algorithm库)
+    - [IO库](#io库)
+    - [Fstream库](#fstream库)
+    - [`<sstream>`](#sstream)
+    - [`<utility>`](#utility)
+        - [std::pair](#stdpair)
+        - [std::tuple](#stdtuple)
+    - [`<array>`](#array)
+    - [`<random>`](#random)
+    - [正则表达式 `<regex>`](#正则表达式-regex)
+    - [位 `<bitset>`](#位-bitset)
+    - [替用运算符 `<ciso646>`](#替用运算符-ciso646)
 
 ### STL 简介
 
@@ -105,12 +119,14 @@ img:
 &emsp;&emsp;deque 的底层是一小块连续空间，该空间每个元素都是指向另一段连续内存的指针，相当于 deque 管理的是一段内存映射表。所以，访问 deque 的元素需要经过两次查找，访问速度要比vector慢。
 
 ##### stack & queue
+
 &emsp;&emsp;stack 是栈，queue 是单端队列。
 
 &emsp;&emsp;stack 和 queue 都是适配器，它们的底层一般是 deque。不用 vector 作为底层的原因可能是因为扩容比较耗时。
 
-####非连续内存顺序容器
+#### 非连续内存顺序容器
 ##### list & forward_list
+
 &emsp;&emsp;list 是双向链表，forward_list 是单向链表，两者的底层也是链表，可以快速增删。
 
 &emsp;&emsp;list 的插入，删除，迭代器都和连续内存容器不一样，`lst.before_begin()`, `lst.insert_after()`, `lst.erase_after()`。另外，`<algorithm>` 的泛型算法对 list 不适用。list 有专用版本，例如：`lst.merge`, `lst.sort`, `lst.remove`, `lst.reverse`,`lst.unique`, `lst.splice` 等。
@@ -180,6 +196,143 @@ img:
 - 最好每次增删或容量调整后重新定位现有迭代器
 - 不要保存 end() 返回的迭代器，若元素有增删，每次都要调用 end() 进行判断
 - 循环内使用 insert，erase 时要算清楚循环迭代器的位置，以及不同情况下是否该自增/自减
+
+
+
+### STL 库
+
+#### algorithm库
+
+#### IO库
+
+#### Fstream库
+
+
+
+#### `<sstream>`
+
+Q: 我怎样才能把整数转化为字符串？
+A: 最简单的方法是使用stringstream ：
+
+```C++
+using namespace std;
+
+string itos(int i)	// convert int to string
+{
+    stringstream s;
+    s << i;
+    return s.str();
+}
+
+int main()
+{
+    int i = 127;
+    string ss = itos(i);
+    const char* p = ss.c_str();
+
+    cout << ss << " " << p << "\n";
+}
+ 
+
+```
+当然，很自然地，你可以用这种方法来把任何可通过“<<”输出的类型转化为string。想知道string流的细节吗？参见《The C++ Programming Language》，21.5.3节。
+
+
+#### `<utility>`
+
+##### std::pair
+
+```C++
+pair<int, int> p{ 1,2 };
+auto a = make_pair(1, 2);
+```
+
+```C++
+pair<int, int> p{ 1,2 };
+auto a = make_pair(1, 2);
+	pair <string, string> author{"James", "Joyce"};
+	cout << author.first << author.second << endl;
+pair<type1, type2>	初始化一个pair
+	默认对数据成员值初始化
+	数据成员默认为public
+make_pair(v1, v2)	返回一个从v1，v2推断类型的pair
+return pair<string, int>();	可以返回pair，同时返回两个值
+	
+	
+ <bitset> 常量长度的位数组
+
+<bigNumber>?
+
+#####  std::tuple
+
+
+```C++
+tuple<int, double, string> t;
+string s = "asd";
+auto b = make_tuple(1, 1.2, s);
+auto &c = get<1>(b);
+```
+
+#### `<array>`
+
+初始化
+array<int, 10> ai;
+array<string, 42> as;
+
+#### `<random>`
+https://blog.csdn.net/hejianhua/article/details/6204618
+
+```C++
+static default_random_engine e;
+// e.min  == 1;
+// e.max == 2147483646
+
+// double (0,0 1.0)
+static uniform_real_distribution<double> ud(0.0, 1.0);
+for (size_t i = 0; i < 10; ++i)
+	cout << ud(e) << endl;
+
+// 用自己生成种子
+e.seed(e());
+
+// int(-10, 10)
+static uniform_int_distribution<int> ui(-10, 10);
+for (size_t i = 0; i < 10; ++i)
+	cout << ui(e) << endl;
+```
+
+
+#### 正则表达式 `<regex>`
+
+
+```C++
+regex r("[^c]ei");
+smatch results;
+string s("the string need be searched");
+regex_search(s, results, r);
+```
+#### 位 `<bitset>`
+
+接受 `unsigned long long`
+
+```C++
+
+int i = 12345678;
+bitset<32> b(i);	
+cout << b.count() << endl;
+
+bitset<32> sb("00110011");
+cout << b << endl;
+```
+
+
+#### 替用运算符 `<ciso646>`
+
+初等	替用	初等	替用	初等	替用
+&&	and	~	compl	||	or
+&=	and_eq	!	not	|=	or_eq
+&	bitand	!=	not_eq	^	xor
+|	bitor			^=	xor_eq
 
 
 [返回目录](#Content)

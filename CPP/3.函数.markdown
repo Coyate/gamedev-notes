@@ -1,0 +1,325 @@
+- 函数基础
+- 函数调用
+- 函数重载
+- 可调用对象
+
+- [函数基础](#函数基础)
+- [函数调用](#函数调用)
+- [函数重载](#函数重载)
+- [可调用对象](#可调用对象)
+	- [lambda](#lambda)
+	- [函数指针](#函数指针)
+
+
+
+### 函数基础
+
+
+
+函数的组成：返回参数 函数名（形参）{
+				函数体
+			}
+	• 函数声明时声明的为函数原型（function prototype），可以不写出函数形参，不需要谢函数体
+	• 如果在内层作用域中声明函数，会隐藏掉外层作用域的声明（和变量名一样）
+返回参数
+返回类型
+	1. void型，不返回任何值
+	2. 不能是数组或函数类型，但可以是函数指针或数组指针
+	3. 在条件分支中不返回值，编译器（vs）会报warning
+
+返回值 return
+	• 返回的值是一个临时变量
+	• 不能返回局部对象的引用和指针，返回是在函数结束后，局部对象已经被释放了
+	• 返回引用的函数会返回左值
+	char& get_val(string &str, string::size_type ix) {
+		return str[ix];
+	}
+	get_val(s, 0) = 'A'; // 返回左值，可以赋值
+
+
+参数传递
+passed by reference 引用传递
+passed by value 值传递（拷贝）
+	- 无须改变值时，基本都用const &，效率要高
+		- 保证效率与安全，字符串的字面值会自动变为常量引用，若此时函数不是常量引用，就会出错
+普通的传一个*指针，是用的值传递，传递的是指针的拷贝
+
+### 函数调用
+函数的调用过程
+主调函数（calling function）中断，被调函数（called function）执行
+	1. 调用函数
+		a. 用实参初始化函数对应的形参（未规定实参的求值顺序）
+		b. 将控制权转移给被调函数
+	2. 执行函数
+		a. （隐式）定义并初始化形参
+		b. 将控制权转回主调函数
+
+函数调用的过程
+
+&emsp;&emsp;在引入了虚函数后，则函数的查找变成了以下的情况：
+>`p->memberFunction(); object.memberFunction()`
+    1. 确定 p，object 的静态类型
+    2. 在 p，object 对应的类中查找 mem，找不到沿直接基类查找
+    3. 进行类型检查，类型不同则过不了
+    4. 若是用指针或引用调用了虚函数，则根据动态类型确定使用那个虚函数
+
+#### 函数调用约定
+
+调用约定和名字修饰约定。
+__stdcall
+__cdecl
+__cdecl有什么用？ C调用约定（即用__cdecl关键字说明）和__stdcall调用约定有所不同，虽然参数传送方面是一样的，但对于传送参数的内存栈却是由调用者来维护的（也正因为如此，实现可变参数的函数只能使用该调用约定），另外，在函数名修饰约定方面也有所不同。
+__thiscall
+https://blog.csdn.net/liukang325/article/details/52596713
+
+
+
+
+### 函数重载
+
+
+函数重载 overloaded
+	• main函数不能重载，不能迭代
+	• 除了返回类型不同，其他部分都相同的函数会被认定为同一个函数（通不过编译）
+	• 顶层const不影响函数形参，以下两个函数会被认定为一样的
+	lookup(phone);
+	lookup(const phone);
+	• 顶层const影响指针或引用,传递非常量给函数时,编译器优先使用非常量形参的函数来重载
+		- 可以使用以下技巧来分别处理有无const参数的版本
+		const string& shorterString(const string &s1, const string &s2) {
+			return (s1.length() < s2.length()) ? s1 : s2;
+		}
+		
+		string& shorterString(string &s1, string &s2) {
+			auto &r = shorterString(const_cast<const string&>(s1), const_cast<const string&>(s2));
+			return const_cast<string&>(r);
+		}
+
+特性	c	c++	
+函数重载	不支持	支持	
+编译后符号名	_foo	_foo_int_int	链接交换指定符号extern "C"，用以解决函数名字匹配问题
+void foo(int, int)
+
+
+
+大部分的操作符是可以被重载的，例外的只有“.”、“::”、“?:”和“sizeof”。
+
+
+#### 函数匹配
+
+
+函数匹配 Function match
+重载确定的结果 Overload Resolution
+		a. best match 最佳匹配
+		b. no match 无匹配
+		c. ambiguous call 二义性调用
+		f(int, int);
+		f(double, double);
+		f(42, 2.56); // 二义性错误
+
+重载确定的过程
+	1. 候选函数 cadidate function
+		a. 同名函数
+		b. 声明可见
+	2. 可行函数 viable function
+		a. 形参大于等于实参数量
+		b. 类型相同或者可转换
+	3. 最佳匹配 best match
+		a. 最好类型完全相同，不转换
+		b. 每个实参不劣于其他匹配，类型匹配优先级：
+			i. 精确匹配
+				1) 类型相同
+				2) 数组与函数转换为指针
+				3) 添加或删除顶层const
+			ii. const转换（不包括指针）
+			iii. 类型提升
+			iv. 算术类型转换，指针转换（指针转bool，指针转成常量指针）
+			v. 类类型转换
+		void f(int);
+		void f(short);
+		f('a'); // match f(int)
+		c. 至少由一个实参优于其他匹配
+	
+重载运算符 Overloaded Operator
+是一个函数，由operator关键字后接要定义的运算符
+	• 可以显式调用重载的运算符函数
+	operator+(data1, data2);
+	
+	• 以下运算符必须定义为成员函数
+	=	[ ]	( )
+	• 复合赋值运算符，递增，递减最好都作为成员函数
+	+=	-=	*=	/=	++	--
+	• 如果一个运算符是成员函数，则其左侧的运算对象绑定到隐式的*this参数
+	• 标准库要求容器中的类型通常有赋值运算符，返回值为左侧运算对象的引用
+	
+	• 以下运算符不能被重载
+	::	*	,	?
+	• 以下运算符无法保证求值顺序或短路特性，或者有特殊含义，最好不要重载
+	&&	||	,	&
+	
+	• 以下运算符最好重载为非成员函数，可以保留对称性，一般也会声明为友元
+	+	- 	*	/	
+	• 重载输入运算符>>需要处理输入失败的情况
+	• 重载下标运算符[ ]通常会定义常量和非常量两个版本
+	• 递增递减运算符的前置，后置
+		class& operator++( ); // 前置
+		class& operator--( );
+		class& operator++(type& ); // 后置
+		class& operator--(type& ); 
+	• 函数调用运算符 ( )
+	struct divide {
+		int operator()(int de, int div) {
+			return de/div;
+		}
+	}
+
+
+### 可调用对象
+
+
+<functional>
+std::function实现
+可调用对象包含：函数，函数指针，lambda，bind，重载了函数调用符的类
+不同的可调用对象可以是一样的调用形式 (Call Signature) 例子：int(int, int)
+	• 二义性可以调用可调用对象来消除
+
+	map<string, function<int(int, int)>> biops= {
+		{"+", add},
+		{"-", std::minus<int>()},
+		{"/", divide()},
+		{"*", [ ](int i, int j){return i+j;}},
+		{"%", mod}
+	}
+
+
+#### 标准库函数对象
+
+
+标准库函数对象 <functional>
+plus<int> intAdd;
+int sum = intAdd(10, 20);
+sort(svec.begin(), svec.end(), greater<string>());
+
+算术	关系	逻辑
+plus	equal_to	logical_and
+minus	not_equal_to	logical_or
+multiplies	greater	logical_not
+divides	greater_equal	
+modulus	less	
+negate	less_equal	
+标准库函数对象对指针适用！可以用来比较指针的内存地址！
+	vector<string*> strVec;
+	sort(strVec.begin(), strVec.end(), less<string*>());
+
+#### lambda
+
+
+Lambda
+Lambda表达式又称为匿名函数
+[capture list](parameter list) -> return type{body}
+[捕获列表](参数列表)->返回类型{函数体}
+	• 捕获列表可以捕获所在域内的局部变量，可为空
+	• 参数列表，可省略
+	• 返回类型必须尾置，一般情况下省略，编译器可以自动推断返回类型
+	• 函数体不可省略
+例子
+-
+	• lambda最好只用来定义用在小范围的简单操作
+	• lambda的捕获列表不计入谓词元，在接受一元谓词或二元谓词的地方比函数方便
+	• 若lambda包含return以外的语句，则编译器会将返回类型推断为void，需要指定尾置返回类型
+	transform(beg, end, beg2, [ ](int i) -> int 
+						{ if(i < 0) return -i; else return i;});
+
+参数捕获
+[ ]	空捕获列表，不使用局部变量
+[identifier_list]	值捕获，lambda中使用的是被拷贝的变量
+[&]	引用捕获，lambda使用的是引用所绑定的对象
+	        auto f = [&v1] {return v1;};
+	        • 需要确保引用在lambda调用是存在的
+	        • 尽量不要捕获指针和引用，迭代器等存生存期较为复杂的对象）
+[=]	值捕获是在创建lambda对象时拷贝
+	        int v1 =42;
+	        auto f = [v1]{return v1;};
+	        cout << f;
+[&, identifier_list]	写在list中的变量采用值捕获，未写的引用捕获
+[=, identifier_list]	与上面相反，后面的list名字前要加& 
+
+
+隐式捕获，代码可以推断我们使用那些变量，=表示值捕获方式，&表示引用捕获
+	auto f = [=](const string &s){ return s.size() >= sz;}; // = 表示值捕获方式
+
+可变lambda值
+加上mutable可以改变拷贝捕获变量的值
+	auto f = [v1]( ) mutable { return ++v1;}
+
+c++的Lambda原理
+定义一个lambda函数时，编译器会生成一个匿名类类型，传递lambda时，将生成的这个匿名新类型的对象传入。
+	• 这个类型将捕获变量变为了数据成员
+	• lambda对象创建时完成初始化
+	• 传递lambda函数和传递其他函数对象一样的效率，传递函数指针会比较慢
+
+#### 函数指针
+int *f( int i, int j)和 int (*p)( int i ,int j)
+前者是返回指针的函数，它是一个函数的声明，后者是指向函数的指针，它定义了一个指针。
+
+指向函数的指针，格式与写函数声明一样，多了个*和括号
+	bool (*pf)(const string&, const string&); //未初始化的函数指针
+	pf = lengthCompare; // 函数与数组一样，可以自动转化未指针
+	pf = &lengthCompre; // 带不带取地址符号一样的
+
+可以用函数指针调用函数，类似于函数别名，可直接调用，可解引用括号调用
+	bool bl = pf("hello", "goodbye");
+	bool bl = (*pf)("hello", "goodbye"); // 两种写法一样的
+
+	• 给函数指针赋值必须用精确匹配的函数
+	• 指向不同类型的函数指针不能相互转换
+	• 函数作为实参会自动转换为指针
+
+简便写法
+	decltype(lengthCompare) *fp2;
+	using f = int(int *, int); // 函数类型，不能作为返回参数类型
+	using fp = int(*)(int*, int); // 函数指针类型
+	fp f1(int); // 返回函数指针的函数
+	auto f1(int) -> int(*)(int*, int);
+	decltype(lengthCompare) *f2(int*, int);
+
+复杂例子
+	int (*(*f)(int, int))(int);
+	// f是函数指针，指向的函数入参为(int, int),返回一个函数指针，返回的指针指向int(*)(int)类型的函数
+	
+	int max2(int a, int b) {
+		return a > b ? a : b;
+	}
+	
+	int(*returnFuncP(int))(int, int) {
+		int(*p)(int, int) = &max2;
+		return p;
+	}
+	
+	int main() {
+		int(*(*f)(int))(int, int) = returnFuncP;
+		cout << f(0)(1, 2); // 2
+	}
+	
+	auto returnFuncP2(int) -> int(*)(int, int) {} // 推荐写法
+
+#### 参数绑定
+
+
+
+参数绑定
+bind <functional>  
+bind是一个通用函数适配器，接受一个可调用对象，生成一个新的可调用对象来适配参数列表，格式为:
+	auto newCallable =  bind(callable, args_list); // args_list可以放入函数参数和占位符
+	
+	auto check = bind(checksize, _1, 6); // _1是占位符，位于std::placeholders
+	check("hello"); // 等同于 checksize(“hello”, 6); 占位符用来保有原有参数位置
+	
+	auto g = bind(f, a, b, _2, c, _1);
+	g(x, y); // 等同于 f(a, b, y, c, x); //占位符可以改变参数顺序
+	bind(isShorter, _2, _1); // 可以直接改变排序顺序
+	
+	auto wc = find_if(begin(), end(), bind(check_size, _1, sz)); // find_if会自动调用绑定后的函数对象，_1处放入迭代器解引用后的元素
+	
+	ostream& print(ostream &os, const string &s, char c);
+	for_each(word.begin(), word.end(), bind(print, ref(os), _1, ' ')); // 使用标准库ref()函数，用cref()函数可以生成常量引用

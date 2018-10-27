@@ -1,0 +1,78 @@
+#### 单例 Singleton
+https://blog.csdn.net/qq_35280514/article/details/70211845
+https://blog.csdn.net/zztan/article/details/54691809
+
+
+### 设计模式
+单例！
+工厂模式
+actor
+设计模式：代理，桥接，适配器，建造者
+
+
+## 设计模式
+
+> 各大设计模式例子参考：[CSDN专栏 . C++ 设计模式](https://blog.csdn.net/column/details/15392.html) 系列博文
+
+[设计模式工程目录](DesignPattern)
+
+### 单例模式
+
+[单例模式例子](DesignPattern/SingletonPattern)
+
+### 抽象工厂模式
+
+[抽象工厂模式例子](DesignPattern/AbstractFactoryPattern)
+
+### 适配器模式
+
+[适配器模式例子](DesignPattern/AdapterPattern)
+
+### 桥接模式
+
+[桥接模式例子](DesignPattern/BridgePattern)
+
+### 观察者模式
+
+[观察者模式例子](DesignPattern/ObserverPattern)
+
+### 设计模式的六大原则
+
+* 单一职责原则（SRP，Single Responsibility Principle）
+* 里氏替换原则（LSP，Liskov Substitution Principle）
+* 依赖倒置原则（DIP，Dependence Inversion Principle）
+* 接口隔离原则（ISP，Interface Segregation Principle）
+* 迪米特法则（LoD，Law of Demeter）
+* 开放封闭原则（OCP，Open Close Principle）
+
+
+
+Q: 什么是function object?
+A: Function object是一个对象，不过它的行为表现像函数。一般而言，它是由一个重载了operator()的类所实例化得来的对象。
+Function object的涵义比通常意义上的函数更广泛，因为它可以在多次调用之间保持某种“状态”——这和静态局部变量有异曲同工之妙；不过这种“状态”还可以被初始化，还可以从外面来检测，这可要比静态局部变量强了。我们来看一个例子：
+
+	class Sum {
+		int val;
+	public:
+		Sum(int i) :val(i) { }
+		operator int() const { return val; }		// extract value
+
+		int operator()(int i) { return val+=i; }	// application
+	};
+
+	void f(vector v)
+	{
+		Sum s = 0;	// initial value 0
+		s = for_each(v.begin(), v.end(), s);	// gather the sum of all elements
+		cout << "the sum is " << s << "\n";
+	
+		// or even:
+		cout << "the sum is " << for_each(v.begin(), v.end(), Sum(0)) << "\n";
+	}
+ 
+这里我要提请大家注意：一个function object可被漂亮地内联化(inlining)，因为对于编译器而言，没有讨厌的指针来混淆视听，所以这样的优化很容易进行。[译注：这指的是将operator()定义为内联函数，可以带来效率的提高。] 作为对比，编译器几乎不可能通过优化将“通过函数指针调用函数”这一步骤所花的开销省掉，至少目前如此。
+在标准库中function objects被广泛使用，这给标准库带来了极大的灵活性和可扩展性。
+
+[译注：C++是一个博采众长的语言，function object的概念就是从functional programming中借来的；而C++本身的强大和表现力的丰富也使这种“拿来主义”成为可能。一般而言，在使用function object的地方也常可以使用函数指针；在我们还不熟悉function object的时候我们也常常是使用指针的。但定义一个函数指针的语法可不是太简单明了，而且在C++中指针早已背上了“错误之源”的恶名。更何况，通过指针调用函数增加了间接开销。所以，无论为了语法的优美还是效率的提高，都应该提倡使用function objects。
+
+下面我们再从设计模式的角度来更深入地理解function objects：这是Visitor模式的典型应用。当我们要对某个/某些对象施加某种操作，但又不想将这种操作限定死，那么就可以采用Visitor模式。在Design Patterns一书中，作者把这种模式实作为：通过一个Visitor类来提供这种操作（在前面Bjarne Stroustrup的代码中，Sum就是一个Visitor的变体），用Visitor类实例化一个visitor对象（当然，在前面的代码中对应的是s）；然后在Iterator的迭代过程中，为每一个对象调用visitor.visit()。这里visit()是Visitor类的一个成员函数，作用相当于Sum类中那个“特殊的成员函数”——operator()；visit()也完全可以被定义为内联函数，以去除间接性，提高性能。在此提请读者注意，C++把重载的操作符也看作函数，只不过是具有特殊函数名的函数。所以实际上Design Patterns一书中Visitor模式的示范实作和这里function object的实作大体上是等价的。一个function object也就是一个特殊的Visitor。]
