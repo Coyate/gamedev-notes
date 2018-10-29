@@ -1,0 +1,516 @@
+---
+layout: post
+title: "程序的空间与时间"
+date: 2018-10-25 20:24:39
+update: 
+categories: C++
+img:
+---
+
+- [程序内存](#程序内存)
+	- [堆与栈](#堆与栈)
+	- [作用域与生命周期](#作用域与生命周期)
+	- [栈溢出与内存泄露](#栈溢出与内存泄露)
+- [编译，链接，库](#编译链接库)
+	- [源文件，头文件](#源文件头文件)
+	- [预处理](#预处理)
+	- [编译 & 链接](#编译--链接)
+	- [`main` 函数前后](#main-函数前后)
+- [存储计算](#存储计算)
+	- [大小端](#大小端)
+	- [内存对齐](#内存对齐)
+		- [`#pragma pack(n)`](#pragma-packn)
+		- [位域](#位域)
+
+
+### 程序内存
+
+程序内存分为两部分，一部分是程序在运行时（`runtime`），系统分配给程序的内存，包括堆 (`heap`) 和栈 (`stack`) 两个部分，另一部分是程序的可执行文件中存储的一些内容，会被系统从硬盘装载到内存中里，称为可执行文件映像。
+
+可执行文件（ `.exe`, 也包括库 `.dll`, `.lib`）的格式如下：
+
+段 | 名称 | 功能
+--- | --- | ---
+File Header | 文件头 | 描述整个文件的文件属性（文件是静态链接还是动态连接，入口地址、目标硬件、目标操作系统等）
+.text section | 代码段 | 程序语句编译成的机器代码 
+.data section | 数据段 | 已初始化的全局变量和静态变量
+.bss section | BSS 段（Block Started by Symbol）| 未初始化的全局变量和局部静态变量
+.rodata section | 只读数据段 (Read Only Data) | 存放只读数据，一般是程序里面的只读变量（如 const 修饰的变量）和字符串常量
+
+#### 堆与栈
+
+栈是由操作系统自动分配释放的，存放局部变量的值，函数调用的相关信息，一般为 2MB 大小。通常在函数内部声明一个变量就是存放在栈上。
+  
+堆是由操作系统管理并维护的内存，通常会有数百兆，由编程者主动申请（`new` , `malloc`, 或使用其他向操作系统申请内存的方法 ），需要编程者自己管理合适释放。
+
+<details><summary>变量存放示例 </summary>
+
+```cpp
+
+// .data 段
+int g_data_i1 = 10;
+double g_data_d = 20.0;
+int g_data_i2 = 30;
+
+static int gs_data_i1 = 1;
+static double gs_data_d = 1;
+static int gs_data_i2 = 1;
+
+// .bss 段
+int g_bss_i1;
+double g_bss_d;
+int g_bss_i2;
+
+static int gs_bss_i1;
+static double gs_bss_d;
+static int gs_bss_i2;
+
+// .rodata 段
+
+const int g_rodata_i1 = 12;
+const double g_rodata_d = 22.0;
+const int g_rodata_i2 = 32;
+
+void func() {
+	static int ls_data_i1 = 15;
+	static double ls_data_d = 25;
+	static int ls_bss_i2;
+	static int ls_bss_i3;
+
+	cout << ".data段 local static 数据" << endl;
+	cout << "i1 : \t" << ls_data_i1 << "\t" << &ls_data_i1 << endl;
+	cout << "d : \t" << ls_data_d << "\t" << &ls_data_d << endl;
+
+	cout << ".bss段 local static 数据" << endl;
+	cout << "i2 : \t" << ls_bss_i2 << "\t" << &ls_bss_i2 << endl;
+	cout << "i3 : \t" << ls_bss_i3 << "\t" << &ls_bss_i3 << endl;
+	cout << endl;
+}
+int main() {
+
+
+	cout << ".data段 global 已初始化" << endl;
+	cout << "i1 : \t" << g_data_i1 << "\t" << &g_data_i1 << endl;
+	cout << "d : \t" << g_data_d << "\t" << &g_data_d << endl;
+	cout << "i2 : \t" << g_data_i2 << "\t" << &g_data_i2 << endl;
+	cout << endl;
+
+	cout << ".data段 global static 已初始化" << endl;
+	cout << "i1 : \t" << gs_data_i1 << "\t" << &gs_data_i1 << endl;
+	cout << "d : \t" << gs_data_d << "\t" << &gs_data_d << endl;
+	cout << "i2 : \t" << gs_data_i2 << "\t" << &gs_data_i2 << endl;
+	cout << endl;
+
+	cout << ".rodata段 global 数据" << endl;
+	cout << "i1 : \t" << g_rodata_i1 << "\t" << &g_rodata_i1 << endl;
+	cout << "d : \t" << g_rodata_d << "\t" << &g_rodata_d << endl;
+	cout << "i2 : \t" << g_rodata_i2 << "\t" << &g_rodata_i2 << endl;
+	cout << endl;
+
+	// .bss 段初始化
+	g_bss_i1 = 11;
+	g_bss_d = 21.0;
+	g_bss_i2 = 31;
+
+	gs_bss_i1 = 3;
+	gs_bss_d = 5;
+	gs_bss_i1 = 7;
+
+	/// bss
+	cout << ".bss段 global 初始化后 " << endl;
+	cout << "i1 : \t" << g_bss_i1 << "\t" << &g_bss_i1 << endl;
+	cout << "d : \t" << g_bss_d << "\t" << &g_bss_d << endl;
+	cout << "i2 : \t" << g_bss_i2 << "\t" << &g_bss_i2 << endl;
+	cout << endl;
+
+
+	cout << ".bss段 global static 初始化后 " << endl;
+	cout << "i1 : \t" << gs_bss_i1 << "\t" << &gs_bss_i1 << endl;
+	cout << "d : \t" << gs_bss_d << "\t" << &gs_bss_d << endl;
+	cout << "i2 : \t" << gs_bss_i2 << "\t" << &gs_bss_i2 << endl;
+	cout << endl;
+
+	func();
+
+	int stack_i1 = 13;
+	double stack_d = 23.0;
+	int stack_i2 = 33;
+
+	int *heap_i1 = new int(14);
+	double *heap_d = new double(24.0);
+	int *heap_i2 = new int(34);
+
+	cout << "stack 栈 local 数据" << endl;
+	cout << "i1 : \t" << stack_i1 << "\t" << &stack_i1 << endl;
+	cout << "d : \t" << stack_d << "\t" << &stack_d << endl;
+	cout << "i2 : \t" << stack_i2 << "\t" << &stack_i2 << endl;
+	cout << endl;
+
+	cout << "stack 栈 local 指针" << endl;
+	cout << "i1 : \t" << "heap_i1" << "\t" << &heap_i1 << endl;
+	cout << "d : \t" << "heap_d" << "\t" << &heap_d << endl;
+	cout << "i2 : \t" << "heap_i2" << "\t" << &heap_i2 << endl;
+	cout << endl;
+
+	cout << "heap 堆 new 数据" << endl;
+	cout << "i1 : \t" << *heap_i1 << "\t" << heap_i1 << endl;
+	cout << "d : \t" << *heap_d << "\t" << heap_d << endl;
+	cout << "i2 : \t" << *heap_i2 << "\t" << heap_i2 << endl;
+	cout << endl;
+	
+	
+	char l_stack_char_a[] = "aaaaa";
+	char *l_rodata_char_b = "bbbbb";
+	// l_rodata_char_b[2] = '5'; // 写入异常
+	const char* l_rodata_a = "abc";
+	const char* l_rodata_b = "abc";
+
+	cout << ".stack段 local char 使用 [] 声明" << endl;
+	printf("l_char_a\t%X \n", l_stack_char_a);
+	cout << ".rodata段 local char* 也不能更改" << endl;
+	printf("l_rodata_char_b\t%X \n", l_rodata_char_b);
+	
+	cout << ".rodata段 const char*" << endl;
+	printf("l_rodata_a\t%X \n", l_rodata_a);
+	printf("l_rodata_b\t%X \n", l_rodata_b);
+
+	
+	return 0;
+}
+
+```
+
+</details>
+
+
+#### 作用域与生命周期
+
+作用域是按程序块来划分的，块 `Block` 就是 `{ }` ，作用域大体有两点
+
+- 外层作用域的变量可以在内层访问
+- 内层作用域如果声明了外层的同名变量，则优先使用内层的变量，这个特性称为隐藏
+
+对象从创建到销毁的整个时间段称为对象的生命周期，局部对象的生命周期与其作用域相关。
+
+| 对象类型         | 语法                    | 存放位置                                   | 生命周期                                          |
+|--------------|-----------------------|----------------------------------------|-----------------------------------------------|
+| 全局对象         | `main 函数之外定义            | 已初始化的在 .rodata，未初始化的在 .bss段            | 程序开始时（main函数之前）创建，赋值语句时初始化，结束时（main函数之后）销毁    |
+| 全局 `static` 对象 | `main`函数之外加 `static`      | .bss 段                                 | 同上                                            |
+| 局部 `static` 对象 | 函数内部加 `static`          | .bss 段 | 声明时创建，（默认值为 0，已经预留了位置）                        |
+| 只读对象         | `const`, `char* a= "..."` | .rodata段                               |                                          |
+| 局部对象         | 函数内部定义，不使用 `new` / `malloc`                 | stack                                  | 定义时创建，离开作用域时销毁                               |
+| 动态分配对象       | 使用 `new` / `malloc`       |  heap               | 申请时创建，释放时销毁，与作用域无关                            |
+
+因为编译器优化，存放在可执行文件映像段里的变量可能会提前被创建
+- 实验中未初始化的局部 static 被放到了 .data段…
+ 
+#### 栈溢出与内存泄露
+
+操作堆栈内存比较常见的问题就是栈溢出和内存泄漏。
+
+栈的大小是固定的，若没有手动更改，一般32位机器是 1MB，64位是 2MB。这么点大的内存，不小心用完的时候就可能发生栈溢出 (stack overflow) 的错误：
+
+1. 局部数组过大。局部数组存放在栈上，局部的变量太多导致栈溢出。
+2. 递归调用层次太多。调用函数时会将函数相关的寄存器变量压入栈中，递归会调用多层函数，压栈次数太多时，也会导致堆栈溢出。
+3. 指向栈的指针或数组越界，指向了栈外不能读写的位置，会导致栈溢出，该错误也可能被称为段错误 (segment fault)
+
+内存泄漏 (memory leak)：指的是分配的堆内存忘记释放，造成系统内存的浪费，可能会拖慢程序的运行或造成系统崩溃。
+
+<details><summary>内存泄漏示例</summary>
+
+
+```cpp
+
+int main() {
+	int *p = new int[10000000];
+	return 0;  // 忘了释放
+}
+
+```
+> -**`new` 和 `delete`, `malloc` 和 `free` 必须要成双成对！(最好是不要手动管理内存)**
+</details>
+
+
+### 编译，链接，库
+
+从时间上来看，C++代码生成程序有以下几个步骤：
+
+
+1. 写代码，包括头文件(`.h`, `.hpp`)和源文件(`.cpp`)
+2. 预处理，预处理器 (Preprocessor)  处理如 `#include`、`#define` 等带 `#`号的预处理指令）
+3. 编译，将程序翻译成目标文件，即机器可以执行的汇编代码
+4. 链接，链接器将目标文件里的符号相互链接起来
+
+
+平台 | 可执行文件 | 目标文件 | 动态库/共享对象 | 静态库
+---|---|---|---|---
+Windows|exe|obj|dll|lib
+Unix/Linux|ELF、out|o|so|a
+
+#### 源文件，头文件
+
+C++的源文件，头文件体系是延续 C 语言的。一个函数只要声明了就可以使用，编译器不关心函数的实现在哪，实现是由链接器去查找的。编译器将函数与变量统称为符号，只要符号都有相应的声明，编译器就能生成目标文件。
+
+在有多个源文件时，只需每个源文件用 `#include` 包含了头文件的声明，在链接后源文件就可以使用相应的符号，而符号的具体实现（函数的定义，跨文件变量的存储）只需要一份就行了，可以节省内存。
+
+- 头文件和源文件也可以看成一种封装，头文件是给用户的 API，源文件是具体实现
+- 更改源文件的实现后，用户只需要重新链接，使得更新库不需要重新编译代码，可以减少编译时间
+- `inline` 函数需要放在头文件中
+- `template` 需要放在头文件中
+
+#### 预处理
+	
+预处理器是用来处理一些预编译指令的，例如 ：
+
+- `#define`，将宏定义直接进行文字级别的替换
+- `#include`，将头文件置入源文件，之后再进行编译
+- `#ifdef`, 只取有相应宏定义的部分代码进行编译
+
+
+<details>  <summary> 使用预处理进行头文件保护 </summary>
+
+```cpp
+// 防止一个头文件被源文件包含多次（会有同样符号的多次声明），只能按整个文件进行保护
+// #pragma once
+
+// 功能同上，但可以分部分保护
+// #ifndef DATA_H
+// #define DATA_H
+// #endif
+
+```
+
+</details>
+
+#### 编译 & 链接
+
+编译是将源代码翻译成机器码，也就是目标文件，一个源文件生成一个目标文件，分离编译，在编译时互相不可知。编译好的目标文件其实已经是可以执行的文件了，但其中的符号表可能还没有确定。
+
+符号表是存放的是符号（变量和函数）及其对应的地址。若调用了其他头文件中的函数，或者使用了其他源文件中的变量，就需要靠链接器定位到这些符号的位置。链接器处理好目标文件的符号表之后，程序就可以执行了。
+
+
+#### `main` 函数前后
+
+`main` 函数整个程序只能有一个，是程序入口，`main` 函数可以不写 `return` 语句，会隐式返回0
+
+<details><summary> main 函数的写法 </summary>
+
+
+```cpp
+
+int main() {}
+int main(int argc, char *argv[]) {} // argc 是参数数量，argv 保留参数内容
+int main(int argc, char **argv) {} // argv[0]默认保存程序的名字，argc最小值为1
+
+```
+
+</details>
+
+之前在生命周期处就提到 `main` 函数之前有一些操作。程序并不是从 `main` 函数开始运行的，操作系统，C++ 运行库还要做一些额外的操作来保障程序的运行：
+
+1. 操作系统创建进程，装载器装载程序映像，把控制权交给程序的入口函数，该入口函数是由链接器指定的 C++ 运行库启动函数（由创建工程时的 `Console` 等配置决定）
+2. C++ 运行库启动函数
+	1. 初始化栈和堆，设置栈内存，初始化堆管理算法（不用每次都向操作系统申请内存）
+	2. 打开标准输入，输出，错误流（`stdin`, `stdout`, `stderr`）
+	3. 获取命令行参数和环境变量
+	4. 初始化全局和静态变量（.data 段），将未初始化部分的赋初值（.bss段，赋各种类型的0），调用全局/静态对象的构造函数
+	5. 注册上述对象的析构函数（使用 `onexit()` 注册，称为终止处理程序，会在 `main` 函数之后执行）	
+3. 将 `argc`，`argv` 传递给 `main` 函数，运行 `main` 函数
+4.  `main` 函数之后
+	1. 调用注册了的析构函数析构全局对象
+	2. 释放堆内存，关闭标准输入，输出，错误流，释放其他资源
+	3. 调用操作系统的 Exit API 退出进程
+
+### 存储计算
+
+#### 大小端
+
+大小端（Endian）指的是数据在计算机中的存放顺序。小端法是**高字节放在高地址**，大端相反，小端法存储 0x12345678 如下，高位存放在高地址：
+
+| 数据   | 地址    |
+|------|-------|
+| 0x12 | 1004H |
+| 0x34 | 1003H |
+| 0x56 | 1002H |
+| 0x78 | 1001H |
+
+一般来说，Windows，linux 都是小端模式，Mac 是大端模式。
+
+<details><summary>判断大小端</summary>
+
+```cpp
+
+union
+{
+	unsigned char a;
+	unsigned int i;
+}u;
+
+int main() {
+	u.i = 0x12345678;
+	//cout << hex << u.i << endl;
+	//cout << hex << int(u.a) << endl;
+
+	if (u.a == 0x78)
+		cout << "little endian" << endl;
+	else if (u.a == 0x12)
+		cout << "big endian" << endl;
+	else 
+		cout << "what the heck?" << endl;
+	return 0;
+}
+
+
+```
+
+</details>
+
+#### 内存对齐
+
+
+只padding，不调整
+https://www.cnblogs.com/noryes/p/6434245.html
+
+https://www.cnblogs.com/MyBlog-Richard/p/5993610.html
+
+标准禁止对象大小为 0，因为两个不同的对象需要不同的地址表示
+
+https://blog.csdn.net/worldwidehua/article/details/78200547
+
+内有数组的结构体内存对齐	
+
+内存对齐 Stuct Alignment
+和数据相关的操作，例如Caching，Read，Write，每次的取指令地址要4个字节，所以数据一次不会只取1个字节。一般是一条指令取32/64字节的数据（甚至256），每批数据叫做Burst或Granule。但取数据流程还有其他的Burst，比如内存为32B Burst，read/store instruction burst 为4B，SSE Burst为16B。所以至少要按低Burst对齐，数据都要Align到2的幂，用空间换取更少的IO次数。
+	• 对齐之后的数据，可以通过单条指令存取，如果没有对齐，则需要多个指令访问字边界的数据
+
+
+
+	• 编译期决定的事情
+	• 结构体内的成员和最长的成员对齐
+	• 如果结构体中有潜入结构体成员，嵌入内层结构体也和最长的标量有相同的对齐
+	struct A {
+		char* cp;
+		char c;
+		// char[3] pad;
+		int x;
+	}
+	struct B {
+		int i ;
+		bool b1;
+		bool b2;
+	}
+	struct C {
+		short s; // 2 bytes
+		char c;  // 1 bytes
+		int f:1; // 1 bits;
+		int n:4; // 4 bits;
+		int s:7; // 7 bits;
+		// int pad1:4; // 4bits, total 16bits = 2 bytes
+		// char pad2;  // 1 bytes;
+	}
+
+sizeof(name)	A	B	C
+size	12	8	6
+
+例：
+	struct S {
+		int i;
+		int *p;
+	};
+	// 结构体中，p在i之后
+	int main() {
+		S s;
+		int *p = &s.i; // p指向i
+		p[0] = 4; // p[0]指向s.i，s.i = 4
+		p[1] = 3; // p[1] 指向 s.p, s.p = 0x0003
+		s.p = p;  // s.p = p, 即s.p 指向 s.i
+		s.p[1] = 1; // s.p[1] 指向s.p本身，s.p = 0x0001
+		s.p[0] = 2; // 0x0001 = 2，未使用的地址，程序崩溃
+	}
+
+
+
+
+sizeof 是个宏，不做运算
+i=0；
+sizeof（i++）
+
+
+ sizeof()
+
+* sizeof 对数组，得到整个数组所占空间大小。
+* sizeof 对指针，得到指针本身所占空间大小。
+
+
+
+1. sizeof会被编译成一个编译期常量，内部代码会直接删掉，在运行时不存在（decltype类似）
+		a. sizeof(*p) 是求指针指向的内容的大小，即使未初始化也是安全的
+		b. sizeof(++i)括号内的(++i)不执行
+2. sizeof 操作一维静态数组会得到整个数组的大小（单个对象 * 数组size），而不会把数组当指针
+		- 数组在传递进函数之后会退化为指针
+3. sizeof 对vector和string操作只会得到固定部分的大小，vector<int>() 16, string 28
+	sizeof(vector<int>()) = 16，包含了3个int*指针，一个allocator(1字节+padding)
+	sizeof(vector<int>()) = 32，在64位下
+4. sizeof 结果是常量表达式，可以用声明数组
+	int arr[ sizeof(ia) / sizeof(*ia)]
+5. 不能对函数类型，不完整类型求sizeof
+
+
+sizeof vs strlen：
+	本质	参数	返回类型	时间	形式
+sizeof	运算符	类型	size_t	编译期	sizeof x/
+					sizeof (x)
+strlen	函数	(const) char* 	int	运行时	strlen(x)
+
+
+
+##### `#pragma pack(n)`
+
+设定结构体、联合以及类成员变量以 n 字节方式对齐
+
+<details><summary>#pragma pack(n) 使用</summary> 
+
+
+```cpp
+// #pragma pack(push)  // 保存对齐状态
+// #pragma pack(4)     // 设定为 4 字节对齐
+
+struct test
+{
+    char m1;
+    double m4;
+    int m3;
+};
+
+// #pragma pack(pop)   // 恢复对齐状态
+```
+
+</details>
+
+
+
+
+##### 位域
+
+在类的内部连续定义的位域会被压缩在同一整数的相邻位置，但能否压缩是和机器相关的（有符号位域依赖具体实现，无符号位域更加稳妥）
+```C++
+struct bitMode {
+	unsigned int a : 2;
+	unsigned int b : 1;
+	unsigned int c : 3;
+	unsigned int d : 4;
+	unsigned int e : 9;
+}
+```
+
+```cpp
+Bit mode: 2;    // mode 占 2 位
+```
+
+类可以将其（非静态）数据成员定义为位域（bit-field），在一个位域中含有一定数量的二进制位。当一个程序需要向其他程序或硬件设备传递二进制数据时，通常会用到位域。
+
+* 位域在内存中的布局是与机器有关的
+* 位域的类型必须是整型或枚举类型，带符号类型中的位域的行为将因具体实现而定
+* 取地址运算符（&）不能作用于位域，任何指针都无法指向类的位域
+
+

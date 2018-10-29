@@ -14,7 +14,7 @@ C++与图形学相关的笔记，个人在找工作期间整理。
     - lintcode：lintcode 的一些题解，一般会有时间复杂度低和代码量少的两种解法
     
 
-### 格式说明
+### 说明
 
 &emsp;&emsp;推荐使用[GayHub](https://github.com/jawil/GayHub)插件，能在 github 页面上显示 vscode 的侧边栏，以及 toc 目录导航。
 

@@ -9,6 +9,7 @@
 	- [`new` & `delete`](#new--delete)
 		- [`placement` new](#placement-new)
 		- [delete this 合法吗？](#delete-this-合法吗)
+		- [为何delete操作不把指针置零？](#为何delete操作不把指针置零)
 	- [`<allocator>`](#allocator)
 	- [`malloc` & `free`](#malloc--free)
 		- [malloc 与 new 的区别](#malloc-与-new-的区别)
@@ -19,7 +20,8 @@
 		- [weak_ptr](#weak_ptr)
 		- [unique_ptr](#unique_ptr)
 - [RAII 资源获取即初始化](#raii-资源获取即初始化)
-	- [拷贝控制](#拷贝控制)
+	- [移动](#移动)
+		- [左值与右值](#左值与右值)
 
 
 ### 手动内存管理
@@ -576,6 +578,11 @@ A: 因为C++提供了另一种机制，完全可以取代finally，而且这种�
 #### 移动
 
 ##### 左值与右值
+
+https://blog.csdn.net/moon5555/article/details/79339439
+
+https://blog.csdn.net/derkampf/article/details/56489458?utm_source=blogxgwz0
+
 https://www.cnblogs.com/zhangdongsheng/p/7664228.html
 https://www.cnblogs.com/zpcdbky/p/5275959.html
 
