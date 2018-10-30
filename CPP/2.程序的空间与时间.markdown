@@ -16,12 +16,13 @@ img:
 	- [预处理](#预处理)
 	- [编译 & 链接](#编译--链接)
 	- [`main` 函数前后](#main-函数前后)
-- [存储计算](#存储计算)
+- [存储](#存储)
 	- [大小端](#大小端)
+	- [`sizeof`](#sizeof)
 	- [内存对齐](#内存对齐)
-		- [`#pragma pack(n)`](#pragma-packn)
+		- [手动对齐](#手动对齐)
 		- [位域](#位域)
-
+ 
 
 ### 程序内存
 
@@ -174,7 +175,7 @@ int main() {
 	printf("l_rodata_a\t%X \n", l_rodata_a);
 	printf("l_rodata_b\t%X \n", l_rodata_b);
 
-	
+
 	return 0;
 }
 
@@ -321,7 +322,7 @@ int main(int argc, char **argv) {} // argv[0]默认保存程序的名字，argc�
 	2. 释放堆内存，关闭标准输入，输出，错误流，释放其他资源
 	3. 调用操作系统的 Exit API 退出进程
 
-### 存储计算
+### 存储
 
 #### 大小端
 
@@ -365,152 +366,215 @@ int main() {
 
 </details>
 
-#### 内存对齐
+#### `sizeof`
 
+`sizeof(...)` 是单目运算符，其返回值为 unsigned int，在编译时计算其参数所需的字节大小，参数可以是以下类型：
 
-只padding，不调整
-https://www.cnblogs.com/noryes/p/6434245.html
+- 类型：该类型所占空间的大小
+- 数组：只支持静态数组，返回数组的总空间大小
+- 指针：返回指针的大小
+- 表达式：表达式结果类型的大小（与 `decltype` 一样，不对表达式进行计算）
+	- `sizeof(*p)` 是求指针指向对象的类型大小，即使指针未初始化也是安全的
+	- `sizeof(++i)` 括号内的 `++` 不执行
 
-https://www.cnblogs.com/MyBlog-Richard/p/5993610.html
+`sizeof` 需要注意的地方：
 
-标准禁止对象大小为 0，因为两个不同的对象需要不同的地址表示
+- **不能**对函数类型，不完整类型求值
+- 由于在编译时计算，`sizeof` 不能得到动态分配内存空间的大小
+- 运行时不存在 `sizeof` 语句，已经在编译期被替换成字面值常量
+	- 该字面值常量可以用来声明数组：`int arr[ sizeof(ia)];`
+- 当数组传入函数退化成指针时，`sizeof` 对数组名求值返回的是指针的大小
 
-https://blog.csdn.net/worldwidehua/article/details/78200547
+`strlen` 与 `sizeof` 的比较：`strlen` 是函数，参数必须是 `(const) char *`，运行时计算，不安全
 
-内有数组的结构体内存对齐	
-
-内存对齐 Stuct Alignment
-和数据相关的操作，例如Caching，Read，Write，每次的取指令地址要4个字节，所以数据一次不会只取1个字节。一般是一条指令取32/64字节的数据（甚至256），每批数据叫做Burst或Granule。但取数据流程还有其他的Burst，比如内存为32B Burst，read/store instruction burst 为4B，SSE Burst为16B。所以至少要按低Burst对齐，数据都要Align到2的幂，用空间换取更少的IO次数。
-	• 对齐之后的数据，可以通过单条指令存取，如果没有对齐，则需要多个指令访问字边界的数据
-
-
-
-	• 编译期决定的事情
-	• 结构体内的成员和最长的成员对齐
-	• 如果结构体中有潜入结构体成员，嵌入内层结构体也和最长的标量有相同的对齐
-	struct A {
-		char* cp;
-		char c;
-		// char[3] pad;
-		int x;
-	}
-	struct B {
-		int i ;
-		bool b1;
-		bool b2;
-	}
-	struct C {
-		short s; // 2 bytes
-		char c;  // 1 bytes
-		int f:1; // 1 bits;
-		int n:4; // 4 bits;
-		int s:7; // 7 bits;
-		// int pad1:4; // 4bits, total 16bits = 2 bytes
-		// char pad2;  // 1 bytes;
-	}
-
-sizeof(name)	A	B	C
-size	12	8	6
-
-例：
-	struct S {
-		int i;
-		int *p;
-	};
-	// 结构体中，p在i之后
-	int main() {
-		S s;
-		int *p = &s.i; // p指向i
-		p[0] = 4; // p[0]指向s.i，s.i = 4
-		p[1] = 3; // p[1] 指向 s.p, s.p = 0x0003
-		s.p = p;  // s.p = p, 即s.p 指向 s.i
-		s.p[1] = 1; // s.p[1] 指向s.p本身，s.p = 0x0001
-		s.p[0] = 2; // 0x0001 = 2，未使用的地址，程序崩溃
-	}
-
-
-
-
-sizeof 是个宏，不做运算
-i=0；
-sizeof（i++）
-
-
- sizeof()
-
-* sizeof 对数组，得到整个数组所占空间大小。
-* sizeof 对指针，得到指针本身所占空间大小。
-
-
-
-1. sizeof会被编译成一个编译期常量，内部代码会直接删掉，在运行时不存在（decltype类似）
-		a. sizeof(*p) 是求指针指向的内容的大小，即使未初始化也是安全的
-		b. sizeof(++i)括号内的(++i)不执行
-2. sizeof 操作一维静态数组会得到整个数组的大小（单个对象 * 数组size），而不会把数组当指针
-		- 数组在传递进函数之后会退化为指针
-3. sizeof 对vector和string操作只会得到固定部分的大小，vector<int>() 16, string 28
-	sizeof(vector<int>()) = 16，包含了3个int*指针，一个allocator(1字节+padding)
-	sizeof(vector<int>()) = 32，在64位下
-4. sizeof 结果是常量表达式，可以用声明数组
-	int arr[ sizeof(ia) / sizeof(*ia)]
-5. 不能对函数类型，不完整类型求sizeof
-
-
-sizeof vs strlen：
-	本质	参数	返回类型	时间	形式
-sizeof	运算符	类型	size_t	编译期	sizeof x/
-					sizeof (x)
-strlen	函数	(const) char* 	int	运行时	strlen(x)
-
-
-
-##### `#pragma pack(n)`
-
-设定结构体、联合以及类成员变量以 n 字节方式对齐
-
-<details><summary>#pragma pack(n) 使用</summary> 
+<details><summary>sizeof 示例</summary>
 
 
 ```cpp
-// #pragma pack(push)  // 保存对齐状态
-// #pragma pack(4)     // 设定为 4 字节对齐
 
-struct test
+// x64
+	
+char* ss1 = "0123456789";
+char  ss2[] = "0123456789";
+char  ss3[100] = "0123456789";
+int   ss4[100];
+char* ss5 = (char *)malloc(100);
+int*  ss6 = (int *)malloc(100);
+
+cout << "ss1 : " << sizeof(ss1) << endl;	// 8
+cout << "ss2 : " << sizeof(ss2) << endl;	// 11
+cout << "ss3 : " << sizeof(ss3) << endl;	// 100
+cout << "ss4 : " << sizeof(ss4) << endl;	// 400
+cout << "ss5 : " << sizeof(ss5) << endl;	// 8
+cout << "ss6 : " << sizeof(ss6) << endl;	// 8
+cout << endl;
+
+// stack 段， 两个不一样的静态数组
+char str1[] = "fooaaa";		// 7
+char str2[] = "fooaaa";		// 7
+
+// .rodata 段，两个指针指向指向同一位置，.rodata 里实际上只存放了一个常量字符串数组
+char* str3 = "fooaaa";		// 8
+char* str4 = "fooaaa";		// 8
+
+cout << "str1 : " << sizeof(str1) << endl;
+cout << "str2 : " << sizeof(str2) << endl;
+cout << "str3 : " << sizeof(str3) << endl;
+cout << "str4 : " << sizeof(str4) << endl;
+
+```
+
+</details>
+
+#### 内存对齐
+
+内存对齐是编译期决定的事情，其基本原则是结构体内的成员和最长的成员对齐。
+
+> 为什么要对齐内存？
+
+数据从硬盘取出，经过内存，几级 Cache，放到 CPU 寄存器里，中途要经过数次的传输操作。在 CPU 流水线上，并不是一次取单个字节，而且一次取一批数据，通常是 2 的幂（32/64 字节）。如果数据没有按幂对齐，那同一个变量可能会需要两次或多次取指令。所以数据都要对齐，用空间换取更少的 IO 次数。
+
+内存对齐需要注意的情况：
+
+- 空类大小为 1，标准禁止对象大小为 0，因为两个不同的对象需要不同的地址表示
+- 如果结构体中有嵌入结构体，包括嵌入结构体的成员，按所有成员中最长的对齐
+- 如果内有数组，数组也要按最长的成员对齐
+- [虚函数，虚指针，虚继承]((#类的布局))
+
+<details><summary>内存对齐示例</summary>
+
+```cpp
+
+struct A {
+};	// 空类，大小为1
+
+struct B {
+	int i;		// 4 字节
+	double d;	// 8 字节
+	short s;	// 2 字节
+};	// 8 * 3 = 24 字节
+
+struct C {
+	double d;	// 8 字节
+	int i;		// 4 字节
+	short s;	// 2 字节 （2 + 4 = 6，可以放到同一行的 8 字节里存储
+}; // 8 * 2 = 16 字节（通过合理地声明数据成员可以减少内存使用）
+
+struct D {
+	bool b1;	// 1 字节，由于 C 中最长成员为 8 字节，padding 到 8 字节
+	C c;		// 16 字节，按 8 字节 对齐
+	bool b2;	// 同 b1
+};	// 8 + 16 + 8 = 32 字节
+
+// x64
+struct E {
+	char * pc;	// 8 字节
+	char r[9];	// 按 8 字节对齐，一行可以存 8 个 char，多出来的一个 char 单独占一行
+};	// 8 * 3 = 24 字节
+
+
+// Union 按最长的成员计算大小
+union U
 {
-    char m1;
-    double m4;
-    int m3;
-};
+	bool b;		// 1 字节
+	char c;		// 1 字节
+	int i;		// 4 字节
+}; // 4 字节
 
-// #pragma pack(pop)   // 恢复对齐状态
+
+int main() {
+	cout << "A : " << sizeof(A) << endl;
+	cout << "B : " << sizeof(B) << endl;
+	cout << "C : " << sizeof(C) << endl;
+	cout << "D : " << sizeof(D) << endl;
+	cout << "E : " << sizeof(E) << endl;
+	cout << "F : " << sizeof(U) << endl;
+	return 0;
+}
+
+
 ```
 
 </details>
 
 
 
+##### 手动对齐
 
-##### 位域
+`#pragma pack(n)` 会强制设定 `struct`、`union`, `class` 按 `n` 字节对齐。由于 `#pragma pack` 会影响整个程序的对齐方式，必须使用 `#pragma pack(push)` 和 `#pragma pack(pop)` 来防止其他程序块受到干扰。
 
-在类的内部连续定义的位域会被压缩在同一整数的相邻位置，但能否压缩是和机器相关的（有符号位域依赖具体实现，无符号位域更加稳妥）
-```C++
-struct bitMode {
-	unsigned int a : 2;
-	unsigned int b : 1;
-	unsigned int c : 3;
-	unsigned int d : 4;
-	unsigned int e : 9;
+<details><summary>#pragma pack(n) 使用</summary> 
+
+
+```cpp
+// 测试时解除掉 #pragma 的注释
+// #pragma pack(push)  // 保存对齐状态
+// #pragma pack(4)     // 设定为 4 字节对齐
+
+struct A
+{
+	char c;			// 1 字节，padding 到 4 字节
+	double d;		// 8 字节，拆成两个 4 字节
+	int i;			// 4 字节
+};					// 总共 4 * 4 = 16 字节
+
+// #pragma pack(pop)   // 恢复对齐状态
+
+// 按最宽成员，8 字节对齐
+struct B
+{
+	char c;			// 1 字节， padding 到 8 字节
+	double d;		// 8 字节
+	int i;			// 4 字节， padding 到 8字节
+};					// 总共 8 * 3 = 24 字节
+
+int main() {
+	
+	cout << sizeof(A) << endl;	// 16
+	cout << sizeof(B) << endl;	// 24
+	return 0;
 }
 ```
 
+</details>
+
+##### 位域
+
+在类和结构体中，可以将非静态数据成员定义为位域（bit-field），用一定数量的二进制位来存储数据。
+
+- 位域在内存中的布局是与机器有关的，通常情况下，连续存放的同类型位域变量会被压缩到一起存储
+- 位域的类型必须是整数型或枚举类型，带符号类型位域的行为根据编译器的具体实现而定
+- 取地址运算符 `&` 不能作用于位域，指针无法指向位域
+
+<details><summary>位域示例</summary>
+
 ```cpp
-Bit mode: 2;    // mode 占 2 位
+// 最宽的是 int, 4 字节
+struct C {
+	short s;			// 2 字节
+	char c;				// 1 字节
+	int b1 : 7;			// 1 位
+	int b2 : 1;			// 4 位
+	int b3 : 4;			// 7 位
+						// 一共 12 位， 放在 4 字节里存储
+	unsigned char uc;	// 1 字节
+	short c2 : 5;		// 5 位，放在 2 字节里存储
+};	// 一共 12 字节
+
+//	| 0	| 1	| 2	| 3	|	short + char
+//	|	s	| c	| -	|
+
+//	| 4	| 5	| 6	| 7	|	int
+//	|b1,2|b3| -	| -	|
+
+//	| 8	| 9	| 10| 11|	unsigned char + short
+//	| uc|	c2	| -	|
+
+int main() {
+	cout << sizeof(C) << endl;	// 12
+	return 0;
+}
+
 ```
 
-类可以将其（非静态）数据成员定义为位域（bit-field），在一个位域中含有一定数量的二进制位。当一个程序需要向其他程序或硬件设备传递二进制数据时，通常会用到位域。
-
-* 位域在内存中的布局是与机器有关的
-* 位域的类型必须是整型或枚举类型，带符号类型中的位域的行为将因具体实现而定
-* 取地址运算符（&）不能作用于位域，任何指针都无法指向类的位域
-
-
+</details>

@@ -324,11 +324,11 @@ for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
 </details>
 
 
-<details> <summary> 初始化的一些区别 </summary>
+<details> <summary>初始化的一些区别 </summary>
+
 - 默认初始化
 	- 在函数体外的变量会置为该类型的0
 	- 函数体内默认初始化对象的值是未定义的
-
 - 零初始化
 	- 标量类型置为0
 	- 非聚合类的非静态成员
