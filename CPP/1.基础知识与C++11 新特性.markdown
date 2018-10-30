@@ -333,12 +333,12 @@ C++ 的数组是延续的 C 语言数组，基本没有什么不同。
 
 ```cpp
 void error_msg(initializer_list<string> il) {
- for(auto const &s : il)
-  cout << s << " ";
- cout << endl;
+    for (auto const &s : il)
+        cout << s << " ";
+    cout << endl;
 }
 
-error_mst({"this file", "this line", "error:", "2077"});
+error_mst({ "this file", "this line", "error:", "2077" });
 ```
 
 </details>
@@ -352,22 +352,21 @@ error_mst({"this file", "this line", "error:", "2077"});
 <details> <summary>模板的低级使用 </summary>
 
 ```cpp
-template <typename T> 
+template <typename T>
 void print(const vector<T> &v) {
- for (auto const &e : v)
-  cout << e << " ";
- cout << endl;
+    for (auto const &e : v)
+        cout << e << " ";
+    cout << endl;
 }
 
 
 int main()
 {
- vector<int> v1{ 1, 2, 3, 4, 5 };
- vector<string> v2{ "there", "is", "no", "hope"};
- print(v1);
- print(v2);
+    vector<int> v1{ 1, 2, 3, 4, 5 };
+    vector<string> v2{ "there", "is", "no", "hope" };
+    print(v1);
+    print(v2);
 }
-
 ```
 
 </details>
