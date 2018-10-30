@@ -46,9 +46,9 @@ img:
 <details> <summary> 混淆示例 </summary>
 
 ```cpp
-int* p = nullptr, p1 = nullptr; // 错误，p1 的类型是 int，这种写法容易混淆
-int *p2 = nullptr, *p3 = p2; // 这种写法稍好，但最好别再同一行中声明多个指针变量
-// 在同一行中进行连续声明，可以使用已经声明的变量去初始化逗号右边的变量（原则上不推荐）
+// int* p = nullptr, p1 = nullptr;	// 错误，p1 的类型是 int，这种写法容易混淆
+int *p2 = nullptr, *p3 = p2; 		// 这种写法稍好，但最好别再同一行中声明多个指针变量
+													// 在同一行中进行连续声明，可以使用已经声明的变量去初始化逗号右边的变量（原则上不推荐）
 ```
 
 </details>
@@ -70,13 +70,36 @@ C++内置类型如下，长度的单位是字节：
 | long double | 大于等于double | 8         | 8         | -              |                  |
 | 指针          | 机器位数       | 4         | 8         | -              |
 
+<details><summary>内置类型值的范围</summary>
+
+
+```cpp
+#include <limits>
+using namespace std;
+
+int main() {
+	cout << "bool : \t(" << numeric_limits<bool>::min() << ", " << numeric_limits<bool>::max() << "), " << endl;
+	cout << "char : \t(" << int(numeric_limits<char>::min()) << ", " << int(numeric_limits<char>::max()) << "), " << endl;
+	cout << "short : \t(" << numeric_limits<short>::min() << ", " << numeric_limits<short>::max() << "), " << endl;
+	cout << "int : \t(" << numeric_limits<int>::min() << ", " << numeric_limits<int>::max() << "), "<< endl;
+	cout << "long : \t(" << numeric_limits<long>::min() << ", " << numeric_limits<long>::max() << "), " << endl;
+	cout << "long long : \t(" << numeric_limits<long long>::min() << ", " << numeric_limits<long long>::max() << "), " << endl;
+	cout << "float : \t(" << numeric_limits<float>::min() << ", " << numeric_limits<float>::max() << "), " << endl;
+	cout << "double : \t(" << numeric_limits<double>::min() << ", " << numeric_limits<double>::max() << "), " << endl;
+	return 0;
+}
+```
+
+</details>
+
 #### 表达式
 
 - `&&`, `||`, 与或运算符都是先左后右进行计算，并有短路求值特性
 - `,` 逗号运算符是顺序求值的，运算级别最低
 - `<<` 运算符未规定求值顺序
 
-	
+> - **如果在某个表达式中改变了一个变量的值，不要在该条表达式中再使用这个变量**	
+
 <details> <summary> 错误示范  </summary>
 
 ```cpp
@@ -89,11 +112,6 @@ x = (++i) * i; // 也不要这么写
 ```
 
 </details>
-
-
-> - **如果在某个表达式中改变了一个变量的值，不要在该条表达式中再使用这个变量**
-
-
 
 ### 引用，指针，数组
 
@@ -125,26 +143,21 @@ x = (++i) * i; // 也不要这么写
 <details> <summary> 指针要点 </summary>
 
 ```cpp
-// void *
 int i = 0;
-void *p = &i;
-// *p = 1; // 出错，无法解引用非完全类型的指针
+void *p = &i;			// void *，非完全类型
+// *p = 1;				// 出错，无法解引用非完全类型的指针
 
-// 指针相减
-int *p1 = nullptr, *p2 = nullptr;
-auto d = p2 - p1; // (q的地址-p的地址) / sizeof(int)
+int *p1 = nullptr, *p2 = nullptr;	
+auto d = p2 - p1; 		// 指针相减，(q的地址-p的地址) / sizeof(int)
 
-// const 在星号左侧，对象的值无法改变
-const int *p3 = &i;
-int const *p4 = &i;
-//*a = 5; // 出错，表达式无法修改
+const int *p3 = &i;		// const 在星号左侧，对象的值无法改变
+int const *p4 = &i;		// 同 p3
+//*a = 5; 				// 出错，表达式无法修改
 
-// const 在星号右侧，指针本身无法改变
-int *const p5 = &i;
-//p5 = p1; // 出错，表达式无法修改
+int *const p5 = &i;		// const 在星号右侧，指针本身无法改变
+//p5 = p1;				// 出错，表达式无法修改
 
-// 两边都有，对象的值和指针本身都无法改变
-const int *const p6 = &i;
+const int *const p6 = &i;	// 两边都有，对象的值和指针本身都无法改变
 ```
 </details>
 
@@ -153,49 +166,45 @@ const int *const p6 = &i;
 C++ 的数组是延续的 C 语言数组，基本没有什么不同。
 
 - 数组的元素会被默认初始化
-- 数组的下标类型为 `<cstddef>` 中的 `size_t`
-- 数组索引可以处理负值(`a[-1]`)
-- 数组声明时的维度必须是常量表达式(C++14 前)
-- 数组声明时的维度可以是 `size_t` 类型的变量(C++14 起, vs2017 无法使用这条特性，lintcode 可以)
 - 数组不能直接拷贝赋值
+- 数组的下标类型为 `<cstddef>` 中的 `size_t`
+- 数组索引可以处理负值 (`a[-1]`)
+- 数组声明时的维度必须是常量表达式 (C++14 前)
+- 数组声明时的维度可以是 `size_t` 类型的变量 (C++14 起, vs2017 无法使用这条特性，lintcode 可以)
 - `auto` 不能推断数组大小，会得到数组名的指针类型
 - `decltype` 可以得到数组的类型，包括大小
 - `sizeof()` 求数组大小时，编译期会将结果变成字面值
-- `<iterator>` 中的 `begin(A)`, `end(A)` 可以获取数组的头尾指针,不推荐手动获取 
+- `<iterator>` 中的 `begin(A)`, `end(A)` 可以获取数组的头尾指针，不推荐手动获取（通过数组名获取）
 
 <details> <summary>各种数组的写法 </summary>
 
 ```cpp
-/// 数组的各种写法
-int arr[10];	// 整型数组
-int* arr_of_ptr[10];	// 指针的数组
-//int &refs[10];	// 不存在引用的数组
-int(*ptr_to_arr)[10] = &arr;	// Parray为指针，指向大小为10的整形数组
-int(&ref_to_arr)[10] = arr;		// arrRef为引用，引用大小为10的整形数组
-int*(&ref_to_arr_of_ptr)[10] = arr_of_ptr;  // ParrRef为引用，引用大小为10的整形指针数组
+	/// 数组的各种写法
+	int arr[10];					// 整型数组
+	int* arr_of_ptr[10];			// 指针的数组
+	// int &refs[10];				// 不存在引用的数组
+	int(*ptr_to_arr)[10] = &arr;	// Parray为指针，指向大小为10的整形数组
+	int(&ref_to_arr)[10] = arr;		// arrRef为引用，引用大小为10的整形数组
+	int*(&ref_to_arr_of_ptr)[10] = arr_of_ptr;  // ParrRef为引用，引用大小为10的整形指针数组
 
-/// 数组，指针混合写法
-int i = 0;		// 整型变量	
-int *p = &i;	// 整型指针	
-int **pp = &p;	// 指向整型指针的指针	
-int a[10];		// 整型数组	
-int* ap[10];	// 整型指针的数组	
-int(*pa)[10] = &a;	// 指向整型数组的指针	
-int(*pf)(int);	// 函数指针	
-int(*apf[10])(int);	// 函数指针的数组	
+	/// 数组，指针混合写法
+	int i = 0;						// 整型变量	
+	int *p = &i;					// 整型指针	
+	int **pp = &p;					// 指向整型指针的指针	
+	int a[10];						// 整型数组	
+	int* ap[10];					// 整型指针的数组	
+	int(*pa)[10] = &a;				// 指向整型数组的指针	
+	int(*pf)(int);					// 函数指针	
+	int(*apf[10])(int);				// 函数指针的数组	
 
-// 数组传参
-int a[10];
-	
-// 基础写法
-void fun(int*);
-void fun(int[]); // 与上一种写法等价
-void fun(int[], int length);
+	// 数组传参
+	int a[10];
 
-// 传入首尾指针写法
-void fun(int *beg, int *end);
-fun(begin(a), end(a)); // 这两个函数位于<iterator> 
-
+	void fun(int*);					// 基础写法
+	void fun(int[]);				// 与上一种写法等价
+	void fun(int[], int length);	// 最好带上数组长度
+	void fun(int *beg, int *end);	// 传入数组首尾指针写法
+	fun(begin(a), end(a));			// 这两个函数位于<iterator> 
 ```
 
 </details>
