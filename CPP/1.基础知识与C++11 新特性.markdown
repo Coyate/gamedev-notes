@@ -8,27 +8,26 @@ img:
 ---
 
 - [变量，类型，表达式](#变量类型表达式)
-	- [变量](#变量)
-	- [类型](#类型)
-	- [表达式](#表达式)
+    - [变量](#变量)
+    - [类型](#类型)
+    - [表达式](#表达式)
 - [引用，指针，数组](#引用指针数组)
-	- [引用](#引用)
-	- [指针](#指针)
-	- [数组](#数组)
+    - [引用](#引用)
+    - [指针](#指针)
+    - [数组](#数组)
 - [C++11 新特性](#c11-新特性)
-	- [range `for`](#range-for)
-	- [列表初始化](#列表初始化)
-	- [`initializer_list` 可变形参](#initializer_list-可变形参)
-	- [模板](#模板)
+    - [range `for`](#range-for)
+    - [列表初始化](#列表初始化)
+    - [`initializer_list` 可变形参](#initializer_list-可变形参)
+    - [模板](#模板)
 - [C++11 关键字](#c11-关键字)
-	- [`const` 常量](#const-常量)
-	- [`auto` 自动类型推断](#auto-自动类型推断)
-	- [`decltype` 类型推断指示符](#decltype-类型推断指示符)
-	- [`nullptr`](#nullptr)
-	- [`::` 作用域符](#-作用域符)
-	- [`using` 与 `namespace`](#using-与-namespace)
-	- [`constexpr` 常量表达式](#constexpr-常量表达式)
-
+    - [`const` 常量](#const-常量)
+    - [`auto` 自动类型推断](#auto-自动类型推断)
+    - [`decltype` 类型推断指示符](#decltype-类型推断指示符)
+    - [`nullptr`](#nullptr)
+    - [`::` 作用域符](#-作用域符)
+    - [`using` 与 `namespace`](#using-与-namespace)
+    - [`constexpr` 常量表达式](#constexpr-常量表达式)
 
 ### 变量，类型，表达式
 
@@ -46,10 +45,11 @@ img:
 <details> <summary> 混淆示例 </summary>
 
 ```cpp
-// int* p = nullptr, p1 = nullptr;	// 错误，p1 的类型是 int，这种写法容易混淆
-int *p2 = nullptr, *p3 = p2; 		// 这种写法稍好，但最好别再同一行中声明多个指针变量
-													// 在同一行中进行连续声明，可以使用已经声明的变量去初始化逗号右边的变量（原则上不推荐）
+    // int* p = nullptr, p1 = nullptr;  // 错误，p1 的类型是 int，这种写法容易混淆
+    int *p2 = nullptr, *p3 = p2;        // 这种写法稍好，但最好别再同一行中声明多个指针变量
+                                        // 在同一行中进行连续声明，可以使用已经声明的变量去初始化逗号右边的变量（原则上不推荐）
 ```
+
 
 </details>
 
@@ -74,19 +74,19 @@ C++内置类型如下，长度的单位是字节：
 
 
 ```cpp
-#include <limits>
+// #include <limits>
 using namespace std;
 
 int main() {
-	cout << "bool : \t(" << numeric_limits<bool>::min() << ", " << numeric_limits<bool>::max() << "), " << endl;
-	cout << "char : \t(" << int(numeric_limits<char>::min()) << ", " << int(numeric_limits<char>::max()) << "), " << endl;
-	cout << "short : \t(" << numeric_limits<short>::min() << ", " << numeric_limits<short>::max() << "), " << endl;
-	cout << "int : \t(" << numeric_limits<int>::min() << ", " << numeric_limits<int>::max() << "), "<< endl;
-	cout << "long : \t(" << numeric_limits<long>::min() << ", " << numeric_limits<long>::max() << "), " << endl;
-	cout << "long long : \t(" << numeric_limits<long long>::min() << ", " << numeric_limits<long long>::max() << "), " << endl;
-	cout << "float : \t(" << numeric_limits<float>::min() << ", " << numeric_limits<float>::max() << "), " << endl;
-	cout << "double : \t(" << numeric_limits<double>::min() << ", " << numeric_limits<double>::max() << "), " << endl;
-	return 0;
+ cout << "bool : \t(" << numeric_limits<bool>::min() << ", " << numeric_limits<bool>::max() << "), " << endl;
+ cout << "char : \t(" << int(numeric_limits<char>::min()) << ", " << int(numeric_limits<char>::max()) << "), " << endl;
+ cout << "short : \t(" << numeric_limits<short>::min() << ", " << numeric_limits<short>::max() << "), " << endl;
+ cout << "int : \t(" << numeric_limits<int>::min() << ", " << numeric_limits<int>::max() << "), "<< endl;
+ cout << "long : \t(" << numeric_limits<long>::min() << ", " << numeric_limits<long>::max() << "), " << endl;
+ cout << "long long : \t(" << numeric_limits<long long>::min() << ", " << numeric_limits<long long>::max() << "), " << endl;
+ cout << "float : \t(" << numeric_limits<float>::min() << ", " << numeric_limits<float>::max() << "), " << endl;
+ cout << "double : \t(" << numeric_limits<double>::min() << ", " << numeric_limits<double>::max() << "), " << endl;
+ return 0;
 }
 ```
 
@@ -98,17 +98,14 @@ int main() {
 - `,` 逗号运算符是顺序求值的，运算级别最低
 - `<<` 运算符未规定求值顺序
 
-> - **如果在某个表达式中改变了一个变量的值，不要在该条表达式中再使用这个变量**	
+> - **如果在某个表达式中改变了一个变量的值，不要在该条表达式中再使用这个变量** 
 
 <details> <summary> 错误示范  </summary>
 
 ```cpp
-
-i = 0;
-cout << i << ++i << endl; // 未定义行为
-
-x = (++i) * i; // 也不要这么写
-
+    int i = 0;
+    cout << i << ++i << endl;   // 未定义行为
+    int x = (++i) * i;          // 也不要这么写
 ```
 
 </details>
@@ -143,21 +140,21 @@ x = (++i) * i; // 也不要这么写
 <details> <summary> 指针要点 </summary>
 
 ```cpp
-int i = 0;
-void *p = &i;			// void *，非完全类型
-// *p = 1;				// 出错，无法解引用非完全类型的指针
+    int i = 0;
+    void *p = &i;           // void *，非完全类型
+    // *p = 1;              // 出错，无法解引用非完全类型的指针
 
-int *p1 = nullptr, *p2 = nullptr;	
-auto d = p2 - p1; 		// 指针相减，(q的地址-p的地址) / sizeof(int)
+    int *p1 = nullptr, *p2 = nullptr;
+    auto d = p2 - p1;       // 指针相减，(q的地址-p的地址) / sizeof(int)
 
-const int *p3 = &i;		// const 在星号左侧，对象的值无法改变
-int const *p4 = &i;		// 同 p3
-//*a = 5; 				// 出错，表达式无法修改
+    const int *p3 = &i;     // const 在星号左侧，对象的值无法改变
+    int const *p4 = &i;     // 同 p3
+    // *a = 5;              // 出错，表达式无法修改
 
-int *const p5 = &i;		// const 在星号右侧，指针本身无法改变
-//p5 = p1;				// 出错，表达式无法修改
+    int *const p5 = &i;     // const 在星号右侧，指针本身无法改变
+    // p5 = p1;             // 出错，表达式无法修改
 
-const int *const p6 = &i;	// 两边都有，对象的值和指针本身都无法改变
+    const int *const p6 = &i; // 两边都有，对象的值和指针本身都无法改变
 ```
 </details>
 
@@ -179,93 +176,73 @@ C++ 的数组是延续的 C 语言数组，基本没有什么不同。
 <details> <summary>各种数组的写法 </summary>
 
 ```cpp
-	/// 数组的各种写法
-	int arr[10];					// 整型数组
-	int* arr_of_ptr[10];			// 指针的数组
-	// int &refs[10];				// 不存在引用的数组
-	int(*ptr_to_arr)[10] = &arr;	// Parray为指针，指向大小为10的整形数组
-	int(&ref_to_arr)[10] = arr;		// arrRef为引用，引用大小为10的整形数组
-	int*(&ref_to_arr_of_ptr)[10] = arr_of_ptr;  // ParrRef为引用，引用大小为10的整形指针数组
+    /// 数组的各种写法
+    int arr[10];                            // 整型数组
+    int* arr_of_ptr[10];                    // 指针的数组
+    // int &refs[10];                       // 不存在引用的数组
+    int(*ptr_to_arr)[10] = &arr;            // Parray为指针，指向大小为10的整形数组
+    int(&ref_to_arr)[10] = arr;             // arrRef为引用，引用大小为10的整形数组
+    int*(&ref_to_arr_of_ptr)[10] = arr_of_ptr;// ParrRef为引用，引用大小为10的整形指针数组
 
-	/// 数组，指针混合写法
-	int i = 0;						// 整型变量	
-	int *p = &i;					// 整型指针	
-	int **pp = &p;					// 指向整型指针的指针	
-	int a[10];						// 整型数组	
-	int* ap[10];					// 整型指针的数组	
-	int(*pa)[10] = &a;				// 指向整型数组的指针	
-	int(*pf)(int);					// 函数指针	
-	int(*apf[10])(int);				// 函数指针的数组	
+    /// 数组，指针混合写法
+    int i = 0;                              // 整型变量	
+    int *p = &i;                            // 整型指针	
+    int **pp = &p;                          // 指向整型指针的指针	
+    int a[10];                              // 整型数组	
+    int* ap[10];                            // 整型指针的数组	
+    int(*pa)[10] = &a;                      // 指向整型数组的指针	
+    int(*pf)(int);                          // 函数指针	
+    int(*apf[10])(int);                     // 函数指针的数组	
 
-	// 数组传参
-	int a[10];
+    /// 数组传参
+    int a[10];
+    void fun(int*);                         // 基础写法
+    void fun(int[]);                        // 与上一种写法等价
+    void fun(int[], int length);            // 最好带上数组长度
+    void fun(int *beg, int *end);           // 传入数组首尾指针写法
+    fun(begin(a), end(a));                  // 这两个函数位于<iterator> 
 
-	void fun(int*);					// 基础写法
-	void fun(int[]);				// 与上一种写法等价
-	void fun(int[], int length);	// 最好带上数组长度
-	void fun(int *beg, int *end);	// 传入数组首尾指针写法
-	fun(begin(a), end(a));			// 这两个函数位于<iterator> 
+    int v[4];
+    int(*pv)[4] = &v;                       // 指向数组的指针
+
+    using vec4_int = int[4];                // 可以用 using 别名简化，减少理解难度
+    vec4_int* pv = &v;                      // 指向数组的指针
 ```
 
 </details>
-
-<details> <summary>对数组使用 using 和 range for </summary>
-
-```cpp
-/// 可以用别名简化，减少理解难度
-// 一般写法
-int v[4];
-int(*pv)[4] = &v;
-
-// 使用别名
-using vec4_int = int[4];
-vec4_int v;
-vec4_int* pv = &v;
-
-
-/// 多维数组可以使用 Range for
-int matrix[100][100];
-for (auto &row : matrix) {
-	for (auto &col : row) {
-		// do something
-	}
-}
-```
-
-</details>
-	
-
+ 
 <details> <summary>多维数组</summary>
 
 ```cpp
+    int matrix[100][100];
+    for (auto &row : matrix) {          // range for
+        for (auto &col : row) {
+            // do something
+        }
+    }
+   
+    int v[2][10]{ {1,2,3,4,5,6,7,8,9,10}, {11,12,13,14,15,16,17,18,19,20} };
+    int(*arr)[10] = v;                  // 数组指针
 
-// 多维数组初识
-int v[2][10]{ {1,2,3,4,5,6,7,8,9,10}, {11,12,13,14,15,16,17,18,19,20} };
-int(*arr)[10] = v; // 数组指针
+    cout << **arr << endl;              // 1
+    cout << **(arr + 1) << endl;        // 11
+    cout << *(*arr + 1) << endl;        // 2
+    cout << *(arr[0] + 1) << endl;      // 2
+    cout << *(arr[1]) << endl;          // 11
 
-cout << **arr << endl;		// 1
-cout << **(arr + 1) << endl;	// 11
-cout << *(*arr + 1) << endl;  // 2
-cout << *(arr[0] + 1) << endl;// 2
-cout << *(arr[1]) << endl;	// 11
+    int a[] = { 1,2,3,4,5 };
+    int *p = (int*)(&a + 1);
+    cout << *(p - 1) << endl;           // 5，下面为分解步骤
 
+    int(*p1)[5] = &a;           // a为数组名,会转换为指针, &a相当于取指针的地址,所以p1是指向数组的指针,p1中存的是 a[0][0],也是 a[0] 的地址
+    int(*p2)[5] = p1 + 1;       // 整体加了一行,即从 a[0][0] 增加一行, p2 指向 a[1][0], 即 a[5], 第六个元素
+    int *p3 = (int*)p2;         // 将指向数组的指针转换为指向整形的指针, p3 也指向 a[5]
+    int *p4 = p3 - 1;           // a[5] 向前移动一个，p4 指向 a[4]
 
-// 多维数组练习
-int a[] = { 1,2,3,4,5 };
-int *p = (int*)(&a + 1);
-cout << *(p - 1) << endl; // 5
-
-// 分解步骤
-int(*p1)[5] = &a;  // a为数组名,会转换为指针, &a相当于取指针的地址,所以p1是指向数组的指针,p1中存的是 a[0][0],也是 a[0] 的地址
-int(*p2)[5] = p1 + 1;// 整体加了一行,即从 a[0][0] 增加一行, p2 指向 a[1][0], 即 a[5], 第六个元素
-int *p3 = (int*)p2; // 将指向数组的指针转换为指向整形的指针, p3 也指向 a[5]
-int *p4 = p3 - 1;	// a[5] 向前移动一个，p4 指向 a[4]
-
-// 多维字符串
-char* a2[] = { "hello", "the", "world" };
-char **pa = a2;
-++pa;	
-cout << *pa << endl; // "the"
+    char* a2[] = { "hello", "the", "world" };   // 多维字符串
+    char **pa = a2;
+    ++pa;
+    cout << *pa << endl;        // "the"
 
 ```
 
@@ -282,18 +259,18 @@ cout << *pa << endl; // "the"
 <details> <summary> range for 使用</summary>
 
 ```cpp
-string s;
+    string s;
 
-for (auto& c : s) {
-	if(isalpha(c))
-		toupper(c);
-}
+    for (auto& c : s) {
+        if (isalpha(c))
+            toupper(c);
+    }
 
-// 等同于
-for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
-	if (isalpha(*beg))
-		toupper(*beg);
-}
+    // 等同于
+    for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
+        if (isalpha(*beg))
+            toupper(*beg);
+    }
 ```
 
 </details>
@@ -306,28 +283,26 @@ for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
 - 列表初始化只调用类的构造函数而不需要拷贝构造函数
 - 列表初始化可以防止隐式转换，可以防止类型收窄
 - 可以对聚合类进行列表初始化，列表参数需要和聚合类声明顺序一致，满足以下条件的为聚合类
-	- 所有成员为public
-	- 没有定义任何构造函数
-	- 没有基类
-	- 没有virtual函数
-	- 没有类内初始值
+ - 所有成员为public
+ - 没有定义任何构造函数
+ - 没有基类
+ - 没有virtual函数
+ - 没有类内初始值
 
 <details><summary>初始化列表使用</summary> 
 
 ```cpp
+    double d = 3.1415926;
+    int a{ d };             // 可能发生收缩转换，编译器不让通过
+    int a2(d);              // 发生收缩转换，精度损失
 
-	double d = 3.1415926;
-	int a{ d }; // 可能发生收缩转换，编译器不让通过
-	int a2(d);	// 发生收缩转换，精度损失
+    struct Data {
+        int ival;
+        string s;
+    };
 
-	struct Data {
-		int ival;
-		string s;
-	};
-
-	Data val{ 1, "kkk" };
-	Data val2{ 1 }; //若初始化列表数量少于成员数量，则其后的成员被
-
+    Data val{ 1, "kkk" };
+    Data val2{ 1 };         // 若初始化列表数量少于成员数量，则其后的成员默认初始化
 ```
 
 </details>
@@ -336,14 +311,14 @@ for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
 <details> <summary>初始化的一些区别 </summary>
 
 - 默认初始化
-	- 在函数体外的变量会置为该类型的0
-	- 函数体内默认初始化对象的值是未定义的
+    - 在函数体外的变量会置为该类型的0
+    - 函数体内默认初始化对象的值是未定义的
 - 零初始化
-	- 标量类型置为0
-	- 非聚合类的非静态成员
-	- 聚合类
+    - 标量类型置为0
+    - 非聚合类的非静态成员
+    - 聚合类
 - 值初始化
-	- 被良好定义的值初始化
+    - 被良好定义的值初始化
 
 </details>
 
@@ -358,9 +333,9 @@ for (auto beg = s.begin(), end = s.end(); beg != end; ++beg) {
 
 ```cpp
 void error_msg(initializer_list<string> il) {
-	for(auto const &s : il)
-		cout << s << " ";
-	cout << endl;
+ for(auto const &s : il)
+  cout << s << " ";
+ cout << endl;
 }
 
 error_mst({"this file", "this line", "error:", "2077"});
@@ -379,18 +354,18 @@ error_mst({"this file", "this line", "error:", "2077"});
 ```cpp
 template <typename T> 
 void print(const vector<T> &v) {
-	for (auto const &e : v)
-		cout << e << " ";
-	cout << endl;
+ for (auto const &e : v)
+  cout << e << " ";
+ cout << endl;
 }
 
 
 int main()
 {
-	vector<int> v1{ 1, 2, 3, 4, 5 };
-	vector<string> v2{ "there", "is", "no", "hope"};
-	print(v1);
-	print(v2);
+ vector<int> v1{ 1, 2, 3, 4, 5 };
+ vector<string> v2{ "there", "is", "no", "hope"};
+ print(v1);
+ print(v2);
 }
 
 ```
@@ -415,16 +390,11 @@ int main()
 <details><summary>const 引用</summary> 
 
 ```cpp
-/// 常量引用
-double dval = 3.14;
-//int &r = dval; // 类型不同，无法初始化
-const int &r = dval + 1;
-cout << r << endl;	// 4
-
-// 实际上等同于
-const int temp = dval + 1;
-const int &r2 = temp;
-
+    double dval = 3.14;
+    // int &r = dval;           // 类型不同，无法初始化
+    const int &r = dval + 1;
+    const int temp = dval + 1;  // ←上一条语句实际上发生的
+    const int &r2 = temp;
 ```
 
 </details>
@@ -458,30 +428,26 @@ auto func(int i) -> int (*)[10]
 <details><summary>decltype 使用</summary> 
 
 ```cpp
-// 推断返回类型
-int arr[] = { 1, 3, 5, 7, 9 };
-decltype(arr) *arrPtr(int i); // 推断数组需要手动加*
+    int arr[] = { 1, 3, 5, 7, 9 };
+    decltype(arr) *arrPtr(int i);       // 推断数组需要手动加*
 
-int i = 0, x = 1;
-decltype(i = x) i2 = i; // 类型为 int&，表达式的返回类型是引用类型
-decltype((i)) i3 = i; // int& 多了一层括号，内层括号会变成表达式
-	
-int* p = nullptr;
-decltype(p) p2 = nullptr;	// int*
-decltype(*p) p3 = i; // int&，解引用运算符生成了左值引用
-decltype(&p) p4 = &p; // int**，取地址运算符
+    int i = 0, x = 1;
+    decltype(i = x) i2 = i;             // 类型为 int&，表达式的返回类型是引用类型
+    decltype((i)) i3 = i;               // int& 多了一层括号，内层括号会变成表达式
 
-/// auto 与 decltype 区别
+    int* p = nullptr;
+    decltype(p) p2 = nullptr;           // int*
+    decltype(*p) p3 = i;                // int&，解引用运算符生成了左值引用
+    decltype(&p) p4 = &p;               // int**，取地址运算符
 
-const double d = 10;
-auto d1 = d; // double
-decltype(d) d2 = d; // const double
+    /// auto 与 decltype 区别
+    const double d = 10;
+    auto d1 = d;                        // double
+    decltype(d) d2 = d;                 // const double
 
-const double &r = d;
-auto r1 = r;	// double
-decltype(r) r2 = r;	// const double&
-	
-
+    const double &r = d;
+    auto r1 = r;                        // double
+    decltype(r) r2 = r;                 // const double&
 ```
 
 </details>
@@ -505,21 +471,18 @@ decltype(r) r2 = r;	// const double&
 ```cpp
 class A {
 public:
-	static int s_x; // 类 A 的 x（A::x）
+    static int s_x; // 类 A 的 x（A::x）
 };
 
 int g_x = 0;        // 全局（::）的 x
 
-int main() 
+int main()
 {
-	::g_x = 1;      // 设置全局的 x 的值为 1
-
-	A::s_x = 2;     // 设置类 A 的 x 为 2
-
-	int x = 0;    // local x
-	x = 3;        // local x 的值为 3
+    ::g_x = 1;      // 设置全局的 x 的值为 1
+    A::s_x = 2;     // 设置类 A 的 x 为 2
+    int x = 0;      // local x
+    x = 3;          // local x 的值为 3
 }
-
 ```
 
 </details>
@@ -535,24 +498,20 @@ int main()
 
 <details> <summary> 混淆示范 </summary>
 
-```C++
+
 ```cpp
 void swap(int&, int&);
 
-int main() 
+int main()
 {
-	using namespace std;
-	
-	int i = 0, j = 0;
-	swap(i, j);	// 用的那个 swap?
+    using namespace std;
 
-	// 可以直接用域操作符使用
-	std::cout << i << std::endl;
+    int i = 0, j = 0;
+    swap(i, j);                         // 用的那个 swap? std::swap 还是 main 函数前声明的 swap？
 
-	// 需要多次使用时，可以用 using 引入单个声明（也要确保不会冲突）
-	using std::cout;
-	using std::endl;
-	cout << x << endl;
+    std::cout << i << std::endl;        // 可以直接用域操作符使用
+    using std::cout;                    // 也可以用 using 引入单个声明
+    using std::endl;
 }
 ```
 
@@ -564,12 +523,11 @@ int main()
 
 <details> <summary> 定义类型别名 </summary>
 
-```C++
+```cpp
 using pstring = char*;
-const pstring p = 0;   // 指向char的常量指针
-const pstring *pp;     //  指向char的常量指针的指针
+const pstring p = 0;        // 指向char的常量指针
+const pstring *pp;          // 指向char的常量指针的指针
 ```
-
 
 </details>
 
