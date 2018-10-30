@@ -650,25 +650,6 @@ class C : B1, B2 {};
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### 类的布局
 
 https://www.cnblogs.com/noryes/p/6434245.html
@@ -683,6 +664,17 @@ https://www.cnblogs.com/noryes/p/6434245.html
 类的数据成员按其声明顺序加入内存，（与其访问权限无关，即无论public，private，protected的数据成员，只看其声明顺序）
 派生类继承基类的所有成员（包括私有数据成员），派生类的大小是在基类的大小的基础上再增加自己数据成员的空间。
 
+虚继承
+
+//sizeof(K) == 16
+
+// 空类型，虚继承的空类的大小
+class A { };	// 1
+class B { };	// 1
+class C : public virtual B {}; // 4
+class D : public A, public B {}; // 1
+class E { virtual ~E() {} }; // 4
+// 虚继承和虚函数都会建立虚表，类中存储指向虚表的指针
 
 <details><summary>一道结构体与指针的习题</summary>
 
