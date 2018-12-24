@@ -10,7 +10,8 @@ img:
 
 - [img:](#img)
 - [`Python`基础](#python%E5%9F%BA%E7%A1%80)
-- [作用域与生命周期](#%E4%BD%9C%E7%94%A8%E5%9F%9F%E4%B8%8E%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F)
+  - [命名空间](#%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4)
+  - [作用域](#%E4%BD%9C%E7%94%A8%E5%9F%9F)
 - [数据类型](#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B)
   - [str](#str)
   - [列表 `list`](#%E5%88%97%E8%A1%A8-list)
@@ -24,6 +25,8 @@ img:
   - [函数调用栈](#%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E6%A0%88)
 - [语法特性](#%E8%AF%AD%E6%B3%95%E7%89%B9%E6%80%A7)
 - [面向对象](#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1)
+  - [类成员](#%E7%B1%BB%E6%88%90%E5%91%98)
+  - [继承](#%E7%BB%A7%E6%89%BF)
 - [`types`](#types)
 - [错误处理](#%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)
   - [异常](#%E5%BC%82%E5%B8%B8)
@@ -37,7 +40,8 @@ img:
 
 ## `Python`基础
 
-- 动态语言, 变量类型不固定, 解释器管理内存存储, 变量名只是指针
+- 动态语言, 变量类型不固定, 解释器管理内存存储, 变量名只是名字 (引用)
+- 赋值语句被用来将名字绑定或者重绑定给其他值
 - ipython下最后的运算结果会给 _
 - `python` 源文件默认 `utf-8` 编码
   -  `unicode` 汉字两字节, `uft-8` 英文1字节, 汉字3字节, 生僻字4-6字节, `ASCII` 是`utf-8 `的一部分
@@ -112,16 +116,16 @@ b = a // 3.3 # floor divide 取整除
 | or                | 布尔“或”     |
 | and               | 布尔“与”     |
 | not x             | 布尔“非”     |
-| in，not in         | 成员测试      |
-| is，is not         | 同一性测试     |
-| <，<=，>，>=，!=，==   | 比较        |
+| in, not in         | 成员测试      |
+| is, is not         | 同一性测试     |
+| <, <=, >, >=, !=, ==   | 比较        |
 | |                 | 按位或       |
 | ^                 | 按位异或      |
 | &                 | 按位与       |
-| <<，>>             | 移位        |
-| +，-               | 加法与减法     |
-| *，/，%             | 乘法、除法与取余  |
-| +x，-x             | 正负号       |
+| <<, >>             | 移位        |
+| +, -               | 加法与减法     |
+| *, /, %             | 乘法、除法与取余  |
+| +x, -x             | 正负号       |
 | ~x                | 按位翻转      |
 | **                | 指数        |
 | x.attribute       | 属性      |
@@ -135,7 +139,23 @@ b = a // 3.3 # floor divide 取整除
 
 </details>
 
-## 作用域与生命周期
+### 命名空间
+命名空间 `namespace` 是名字到对象的映射, 通过 `dict` 管理
+
+常见命名空间有:
+- `built-in` 内置命名空间 : 包括内置函数, 内置异常, 在解释器启动时创建, 推出时销毁
+- 全局命名空间 : 包括模块中的名字, 比如类, 函数, 导入的模块, 模块被解释器读入时创建, 解释器推出时销毁
+- 局部命名空间
+  - 函数的命名空间 : 函数调用过程中的名字, 函数参数, 函数体内定义的名字, 函数被调用时创建, 函数返回或有未捕获的异常时销毁
+  - 类的命名空间 : 类定义开始时的命名空间, 解释器读到类定义时创建, 类定义结束后销毁 
+  - 一个对象的属性集合也构程一个命名空间
+
+### 作用域
+作用域是一块代码区域, 在这个区域中, 相关命名空间中的名字可以直接访问
+  - 直接访问 : `name`, 在命名空间中搜索 
+  - 间接访问 : `objname.attr`, 先在命名空间内搜索 `objname`, 再访问其属性 
+同一个代码区域可能存在多个命名空间, 而命名空间又是动态产生的
+
 
 `LEGB` : Python 查找变量的顺序
 - `Local` : 局部
@@ -177,6 +197,35 @@ useGlobal()
 ```
 </details>
 
+<details> <summary> 作用域的坑  </summary>
+
+```python
+class Test(object):
+    i = 1 # 类定义结束就无法直接访问, 除非间接访问 Test.i
+    def test_print(self):
+        print(i)
+
+t = Test()
+i = 2
+t.test_print() # >>> 2
+
+
+class Test(object):
+
+    a = 1
+    b = [a + i for i in range(10)]
+    # NameError: name 'a' is not defined
+    # list comprehension 创建了局部作用域
+    print(b)
+
+    def test(self):
+        pass
+
+
+```
+</details>
+
+
 > Python 函数体代码会进行预编译, 变量的作用域是静态的, 预编译时就能够确定变量的作用域, 但变量名的查找是动态发生的
 
 <details> <summary> 生命周期 </summary>
@@ -193,7 +242,7 @@ print(v)
 ```
 </details>
 
-- [ ] 垃圾回收 (引用计数，分代回收)
+- [ ] 垃圾回收 (引用计数, 分代回收)
 
 ## 数据类型
 
@@ -341,6 +390,8 @@ for name, member in Weekday.__members__.items():
 
 - 没有 `return` 语句的函数返回 `None`, 没有返回值的 `return` 返回 `None`
 - 多值返回的是 `tuple`
+- 可变对象传入函数时, 若再函数内部改变了, 外部会被改变
+- 若为不可变对象传入函数, 修改时会进行重绑定
 
 ```python
 def another_abs(x):
@@ -364,7 +415,7 @@ def nop():
   - 加单独的 `*` 会开启命名参数序列, 必须在传参时声明参数名字, 否则会被视为位置参数, 可变参数后的参数默认都为命名参数
 - 关键字参数
   - 加 `**` 声明 `keyword` 关键字参数, 这些参数会组装成一个字典
-- 函数可以同时传入, 但位置必须为：必选参数（位置参数）、默认参数、可变参数、命名关键字参数和关键字参数。
+- 函数可以同时传入, 但位置必须为：必选参数（位置参数）、默认参数、可变参数、命名关键字参数和关键字参数
   - 习惯写法: `*args` 和 `**kw`
 
 <details> <summary> 函数示例 </summary>
@@ -771,18 +822,95 @@ printDate(10)
 
 ## 面向对象
 
-- 类内使用 `__` 开头的变量为 `private` 变量, `python` 会更改其名字, 在类外声明会添加新的变量
-- `__xxx__` 为特殊变量
-- `Duck type`不需要严格的继承体系, 只需要有同名方法
+> `Duck Type`, 有同样的一组方法, 就认为是同一种类型
 
-- [ ] `super`
-- [ ] `property`
+内置函数在操作对象时, 只要对象有相应的方法, 就可以操作, 例如`len(Obj)` 调用了是`Obj.__len__()`, 只要写了相应的协议方法, 就可以支持用内置函数调用
+
+
+- 类协议 : `__init__`
+- 序列协议 : `__len__`, `__getitem__`
+- 容器协议 : `__delitem__`, `__setitem__`, `__iter__`, `__reversed__`
+- 类型转换协议 : `__str__`, `__int__`, `__float__`, `__repr__`, `__long__`, `__nonzero__`
+- 比较协议 : `__eq__`, `__ne__`, `__lt__`, `__gt__`
+- 数值协议 : `__add__`(+), `__sub__`(-),  (运算符都有相应的协议, 类似于运算符重载)
+- 可调用协议 : `__call__`
+- 哈希协议 : `__hash__`
+
+### 类成员
+
+变量
+- 普通变量 : 方法内创建, 需要加 `self.`
+- 静态变量 : 类内创建, 类共有
+- 类内使用 `__` 开头的变量为 `private` 变量, `python` 会更改其名字(可能为`_classname__membername`)
+- `__xxx__` 为特殊成员, 保留不用
+
+方法
+- 实例方法 : 第一参数约定为 `self`, 用来传递实例(和类)的属性和方法, 只能由实例对象调用
+- 类方法 : 使用装饰器 `@classmethod` 创建, 第一个参数约定为 `cls`, 用来传递类的属性和方法(不能传实例的属性和方法), 实例对象和类对象都可以调用
+- 静态方法 : 使用装饰器 `@staticmethod` 创建, 无默认参数, 函数体中不能使用类或实例的任何属性和方法, 实例对象和类对象都可以调用
+
+> 类方法和静态方法可以用来实现不同的构造函数
+
+<details> <summary> 类成员 </summary>
+
+```python
+
+class Fighter(object):
+    # static member
+    numOfFighter = 0
+    def __init__(self, name):
+        # member
+        self.name = name
+        # private member, its name will be changed to '__Charater__weight' by intepretor
+        self.__weight__ = 1
+    # method
+    def attack(self):
+        pass
+    
+    # class method, called by class
+    @classmethod
+    def addFighter(cls):
+        pass
+    
+    # static method, called by class
+    @staticmethod
+    def count():
+        pass
+
+
+
+class Date(object):
+    def __init__(self, day, month, year):
+        self.day = day
+        self.month = month
+        self.year = year
+    
+    @classmethod
+    def create_from_str(cls, str):
+        day, mouth, year = map(int, str.split('-'))
+        date = cls(day, mouth, year)
+        return date
+
+d = Date.create_from_str('24-12-2018')
+
+```
+</details>
+
+
+
+属性 `property`
+- 属性是通过 `@property` 装饰器修饰过的方法, 使用起来就像变量一样
+  - `@property` : 获取
+  - `@name.setter` : 修改
+  - `@name.deleter` : 删除
+  - 可以使用 `name = property(fget, fset, fdel, doc)` 创建静态字段属性
 - [ ] `setattr`, `hasattr`, `delattr`, `getattr`
-- [ ] `classmethod`, `staticmethod`
 
-```Python
+<details> <summary> 属性 </summary>
+
+```python
 class Character(object):
-    __slots__ = ('skill', 'ability', 'name') # on attrs in slots can be added to instances
+    __slots__ = ('skill', 'ability', 'name') # only attrs which in slots can be added to instances
     Name = 'Super Smash Bros'
     def __init__(self, name):
         self.name = name
@@ -800,7 +928,6 @@ class Character(object):
     @name.setter
     def name(self, value):
         self.__name = value
-
 
 # special method
 class Fib(object):
@@ -849,17 +976,86 @@ class Chain(object):
 
 print(Chain().users.friend.foo.bar)
 ```
-多继承直接 `MixIn`
+</details>
 
-- `__str__` 给 `print` 用的
-- `__repr__` 给调试输出用的, 一般直接 `__repr__ = __str__`
-- `__iter__` 返回一个迭代对象, `for`循环使用该迭代对象的 `__next__` 取值
+特殊成员
+- `__init__` : 构造方法
+- `__del__` : 垃圾回收时触发
+- `__call__` : 调用方法
+- `__dict__` : 类或对象的所有成员
+- `__doc__` : 描述信息
+- `__module__` : 当前对象的模块
+- `__class__` : 类名
+- `__getitem__`, `__setitem__`, `__delitem__` 用于索引操作, 获取, 赋值, 删除
+- `__getslice__`, `__setslice__`, `__delslice__` 用于切片操作
+- `__iter__` : 返回 `iterabale`, 用于迭代
+- `__new__`, `__metaclass`__ : 
+- 
+
+<details> <summary> 特殊成员 </summary>
+
+```python
+class Foo:
+    """ 类的描述 """
+
+    def func(self):
+        pass
+
+print(Foo.__doc__)
+
+```
+</details>
+
+
+
+### [继承](https://www.cnblogs.com/crazyrunning/p/7095014.html)
+
+- 在声明类时将其他类型放到括号里既可以继承其他类型的方法与成员
+- 子类重写父类方法只是把同名属性名绑定到了不同的函数对象上, 实际上是没有重写 (`override`) 的
+- 可以用 `super` 委托调用父类方法
+  - `super` 的查找是通过继承树
+  - 继承树方法的搜索通过 `MRO (Method Resolution Order)` 进行, 类的 `__mro__` 属性会返回方法搜索顺序, 在通过 `object` 继承的新式类中, `mro` 的搜索是通过广度优先搜索进行的 (从左到右)
+  - `mro` 本质上是将继承树变成继承链表, 以保证任何祖先类的方法只被执行一次
+    - `mro` 会因为继承树的更改而变动, 也就是说, 父类可能因为新的子类的 `mixin` 而调用了同级类的新代码
+  - `super` 的实践建议 : 设计好整个体系之后, 再写 `super` 相关的方法...
+  - 通过 `super` 调用的方法链必须一直到根类, 且方法参数与调用参数必须完全匹配
+
+<details> <summary> 钻石继承 </summary>
+
+```python
+class D(object):
+    def __init__(self, d):
+        self.d = d
+
+class B(D):
+    def __init__(self, b, c, d):
+        super(B, self).__init__(c, d)
+        self.b = b
+
+    
+class C(D):
+    def __init__(self, c, d):
+        super(C, self).__init__(d)
+        self.c = c
+
+class A(B, C):
+    def __init__(self, a, b, c, d):
+        super(A, self).__init__(b, c, d)
+        self.a = a
+
+
+f = A(1, 2, 3, 4)
+print(A.__mro__) # A -> B -> C -> D -> o
+print(B.__mro__) # C -> D -> o
+print(C.__mro__) # D -> o
+print(D.__mro__) # o
+```
+</details>
 
 ## `types`
 
-`len(Obj)` 其实调用的是 `Obj.__len__()`, 只要自己写了同名函数, 也可以支持用内置函数调用
 
-`dir(Obj)` 能返回某个对象的所有函数
+
 
 ```Python
 
