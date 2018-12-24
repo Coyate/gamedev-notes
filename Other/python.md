@@ -10,6 +10,7 @@ img:
 
 - [img:](#img)
 - [`Python`基础](#python%E5%9F%BA%E7%A1%80)
+- [作用域与生命周期](#%E4%BD%9C%E7%94%A8%E5%9F%9F%E4%B8%8E%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F)
 - [数据类型](#%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B)
   - [str](#str)
   - [列表 `list`](#%E5%88%97%E8%A1%A8-list)
@@ -30,6 +31,7 @@ img:
   - [`logging`](#logging)
   - [test](#test)
 - [.....](#)
+- [文件操作](#%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C)
 
 
 
@@ -58,6 +60,9 @@ for name in names:
 for i  in range(101): # 0- 100
     sum += i
 
+for w in words[:]: # traverse a copy of words
+    pass
+
 # inside for iteration
 for x in [1, 2, 3, 4, 5]:
     pass
@@ -68,6 +73,24 @@ try:
     pass
     except StopIteration:
         break
+
+# while else
+
+n = 0
+while n < 3 :
+    print("%d is less than 3" % n)
+    n += 1
+else:
+    print("%d is not less than 3" % n) # 循环结束时运行, for 循环也可以使用
+
+# ternary if
+
+# v = value if condition else other
+
+# x or y 
+# equals
+# if bool(x) then x else y
+
 
 print('%s, %s' %('asd', '123'))
 
@@ -80,6 +103,97 @@ b = a // 3.3 # floor divide 取整除
 ```
 </details>
 
+<details> <summary> 运算符优先级  </summary>
+
+
+| 运算符 (优先级递增)               | 描述        |
+|-------------------|-----------|
+| lambda            | Lambda表达式 |
+| or                | 布尔“或”     |
+| and               | 布尔“与”     |
+| not x             | 布尔“非”     |
+| in，not in         | 成员测试      |
+| is，is not         | 同一性测试     |
+| <，<=，>，>=，!=，==   | 比较        |
+| |                 | 按位或       |
+| ^                 | 按位异或      |
+| &                 | 按位与       |
+| <<，>>             | 移位        |
+| +，-               | 加法与减法     |
+| *，/，%             | 乘法、除法与取余  |
+| +x，-x             | 正负号       |
+| ~x                | 按位翻转      |
+| **                | 指数        |
+| x.attribute       | 属性      |
+| x[index]          | 索引        |
+| x[index:index]    | 切片       |
+| f(arguments...)   | 函数调用      |
+| (experession,...) | 绑定或元组   |
+| [expression,...]  | 列表      |
+| {key:datum,...}   | 字典      |
+| 'expression,...'  | 字符串转换     |
+
+</details>
+
+## 作用域与生命周期
+
+`LEGB` : Python 查找变量的顺序
+- `Local` : 局部
+- `Enclosing` : 闭包函数外的函数
+- `Global` : 全局
+- `Builtin` : 内置
+
+- `if`, `while`, `try` 不会引入新的作用域, 其内部变量和外部作用域一致, `module`, `class`, `def`, `lambda` 会引入新的局部作用域
+- 可以在 `Local` 作用域通过 `global`, `non-local` 来使用 `Global` 和 `Enclosing` 作用域的变量
+
+<details> <summary> 作用域 </summary>
+
+```python
+print(int(2.3)) # builtin >>> 2
+
+g_n = 10 # global
+
+if g_n == 10:
+    g_c1 = 20 # global
+else :
+    g_c2 = 10 # global but not defined in the program
+
+def outer():
+    e_count = 1 # Enclosing / Local
+    def inner():
+        nonlocal e_count # use enclosing variable
+        l_sum = 0 # local
+
+print(g_c1) # >>> 20
+# print(g_c2) # name `g_c2` is not defined
+
+def useGlobal():
+    global g_n
+    print(g_n) # >>> 10
+    g_n = 1.33
+    print(g_n) # >>> 1.33
+
+useGlobal()
+```
+</details>
+
+> Python 函数体代码会进行预编译, 变量的作用域是静态的, 预编译时就能够确定变量的作用域, 但变量名的查找是动态发生的
+
+<details> <summary> 生命周期 </summary>
+
+```python
+# 生命周期
+v = 300
+def f():
+    print(v) # Unbound Local Error : local variable 'v' referenced before assignment
+    v = 200 
+f()
+
+print(v)
+```
+</details>
+
+- [ ] 垃圾回收 (引用计数，分代回收)
 
 ## 数据类型
 
@@ -94,7 +208,7 @@ b = a // 3.3 # floor divide 取整除
 - 字符串不可变！
   - `s.replace('a', 'A')` 会生成新的字符串
 - 单引号字符串中可以夹杂双引号, 双引号可以夹杂单引号
-- 正向索引从0开始, 负向索引从1开始
+- 正向索引从 `0` 开始, 负向索引从 `-1` 开始
 - 相邻字符串会自动连接到一起, 不能连接表达式
 
 ```python
@@ -109,6 +223,8 @@ s1 = r'\n\t\v\b' # 原始字符串
 s2[a:b] # [a:b) slice
 len(s) 
 
+print("{1} {0} {1}".format("foo", "bar")) # >>> bar foo bar
+
 ```
 
 - 单独用索引会有 `out of range` 错误, 用 `slice` 则不会
@@ -121,6 +237,8 @@ len(s)
 
 ### 列表 `list`
 有序表, 可以放入任意类型 (可嵌套), `append`, `insert`, `pop`
+- `list` 的 `append` 方法可改变外部全局变量的值
+
 
 ```python
 
@@ -130,14 +248,19 @@ print([name for name in os.listdir('.')])
 
 print([x * x for x in range(2, 10) if x % 2 == 0])
 print([m + str(n) for m in 'ABC' for n in range(3)])
+L = [(x,y,z) for x in range(1,30) for y in range(x,30) for z in range(y,30) if x**2 + y**2 == z**2]
 L2 = [e.lower() for e in L if isinstance(e, str)]
-
 ```
 
 ### 元组 `tuple`
 - 不可变 (类似于单层 `const`)
 - 定义单个元素的元组 t = (1, )
 
+`list` 和 `tuple` 的区别
+
+- `tuple` 基本等于 `const list`
+- `tuple` 的存储空间会比 `list` 小 (T(n))
+- `tuple` 常用来存储不同类型的数据, `list` 通常存同类型的数据
 
 ### 字典 `dict`
 
@@ -235,7 +358,7 @@ def nop():
 
 - 位置参数：一般的参数
 - 默认参数：带有默认值
-  - 函数的默认参数是内存里的变量...最好定义成不变量
+  - 函数的默认参数是内存里的变量...最好定义成不变量 (C++ 的默认参数也是夹带的)
 - 可变参数
   - 加 `*` 声明可变参数, 也可以给 `list` 和 `tuple` 加 `*` 号变为可变参数传入
   - 加单独的 `*` 会开启命名参数序列, 必须在传参时声明参数名字, 否则会被视为位置参数, 可变参数后的参数默认都为命名参数
@@ -249,21 +372,44 @@ def nop():
 ```python
 
 # 列表可变参数
+
+def kSum(*numbers):
+    sum = 0
+    for num in numbers:
+        if not isinstance(num, (int, float)):
+            raise TypeError('Wrong operand type')
+        sum += num * num 
+    print('%d nums have been calculated' % len(numbers))
+    return sum
+
 nums = [1, 2, 3, 4, 6]
 print(kSum(*nums))
 
 # 关键字参数
 def kDict(**kw):
+    for k in kw:
+        print(k)
     print(kw)
 
 kDict(city = 'beigin', a = '2', _21 = 1)
-
-print()
-
 dicket = {'city' : 'beigin', 'a' : '2', '_21' : 1}
 kDict(**dicket)
 
-# 带有所有参数的函数示意
+# 命名关键字参数
+def kNamedDict(*, Beijing, Guangzhou):
+    print(Beijing, Guangzhou)
+
+kNamedDict(Beijing = 'foo', Guangzhou = 'bar')
+
+# 位置参数, 默认参数, 变长参数
+def kMultiply(x, y = 1, *args):
+    multi = x * y
+    for n in args:
+        multi *= n
+    return multi
+
+
+# 带有所有参数的函数示例
 
 def f1(a, b, c=0, *args, **kw):
     print('a =', a, 'b =', b, 'c =', c, 'args =', args, 'kw =', kw)
@@ -296,13 +442,143 @@ f2(*args, **kw)         # a = 1 b = 2 c = 3 d = 88 kw = {'x': '#'}
 <details> <summary> 尾递归实验次数 </summary>
 
 ```python
+def kTailedFib(n0, n1, k):
+    if k == 0:
+        return n1
+    return kTailedFib(n1, n0 + n1, k - 1)
+
 # 994 times tailed recursion fibnacci until overflow
 print(kTailedFib(1, 1, 994))
 
+def kFact(product, k):
+    if k == 1:
+        return product
+    return kFact(product * k, k - 1)
+
 # 994 times tailed recursion factor until overflow
 print(kFact(1, 995))
+
+def kHanoi(n, a = 'A', b = 'B', c = 'C'):
+    if n == 1:
+        print(a, ' --> ', c)
+    else:
+        kHanoi(n - 1, a, c, b)
+        kHanoi(1, a, b, c)
+        kHanoi(n - 1, b, a, c)
 ```
 </details>
+
+<details> <summary> 内置函数 </summary>
+
+```python
+
+# eval : execute string expression
+x = 7
+print(eval( '3 * x' ))
+print(eval('pow(2,2)'))
+
+# input
+
+# python 2.x
+# input() = eval(raw_input(prompt))
+# raw_input directly return a str
+
+# python 3.x 
+# input() only return str
+
+# print
+# print(*objects, sep=' ', end='\n', file=sys.stdout)
+# sep : seprate
+
+# execfile('hello.py')
+# exec
+s = 'print("foobar")'
+exec(s)
+# __import__ : import a mudule
+# __import__('a') # >>> import 'a.py'
+# reload(module)
+
+
+
+# ord : return decimal number of a char
+print(ord('a')) # >>> 97
+# chr : return a char of a decimal number
+print(chr(65)) # >>> 'A'
+# bin : return binary
+print(bin(10)) # >>> 0b1010
+# hex : return hexadecimal
+print(hex(10)) # >>> 0xa 
+# oct : reutrn octodecimal
+print(oct(10)) # >>> 0o12
+# id : return memory address of a object
+print(hex(id(0))) # 0xaddr
+# hash : return hash value of a object
+print(hash('1')) # >>> 447530370
+# repr : return a str by the intepretion format of a objet
+print(repr({'a' : 'rookie'})) # >>> {'a' : 'rookie'}
+# complex([real[, imag]]) : return a complex
+print(complex(1, 2)) # >>> 1 + 2j
+# bytearray
+print(bytearray([1,2,3])) # >>> bytearray(b'\x01\x02\x03')
+# forzenset([iterable]) : return a const set
+
+# divmod : div & mod
+print(divmod(10, 3)) # >>> (3, 1)
+# pow(x, y, z) : (x^y) % z
+print(pow(2, 100, 99)) # >>> 34
+# sum(iterable[, start])
+print(sum([1, 2, 5], 9)) # >>> 17
+# min, max, round
+
+
+
+# enumerate
+for i, e in enumerate([1, 2, 3]):
+    print("%d, %d" %(i, e))
+# iter : create a iterable object
+it = iter([1, 5, 3])
+# next(iterator[, default])
+print(next(it)) # >>> 1
+print(next(it)) # >>> 5
+# sotred : sort a iterable
+print(sorted([1, 5, 3])) # >>> [1, 3, 5]
+
+# slice(start, stop[, step]) : return a slice object
+sli = slice(3)
+print([1, 2, 4, 5, 0][sli]) # >>> [1, 2, 4]
+
+# zip 
+la = [1, 2, 3]
+lb = [4, 5, 6]
+zipped = zip(la, lb) # >>> [(1, 4), (2, 5), (3, 6)]
+zip(*zipped) # >>> [(1, 2, 3), (4, 5, 6)]
+
+# xrange() : return a generator
+# list(xrange(0, 6))
+
+# all : non 0, '', False, None
+# any : only ↑
+all([0, 1, 2, 3]) # >>> false
+
+
+
+# type : return type of a object
+# ininstance : consider inheritance
+# issubclass(class, classinfo)
+# callable(obj) : return true if obj is function, class, class instance with __call__ function
+class A(object):
+    pass
+print(callable(A)) # >>> ture
+
+
+# dir() : return attr list of this module
+# dir([ ]) : return attr list of `list`
+# vars([object]) : return dict contains objects's attr & attr value
+# globals : return a list of global variables
+# locals : return a list of local variables
+```
+</details>
+
 
 ## 语法特性
 
@@ -321,16 +597,61 @@ for i, n in enumerate(g):
     print(i, ' : ', n)
 
 # 函数生成器
+
 def kFibG(k):
     n0, n1 = 0, 1
     while k >= 0:
         n0, n1 = n1, n0 + n1
         k -= 1
-        yield n0        # 遇到 `yield` 返回, 再次执行时从 yield 开始执行
-    return 'Done'
+        yield n0 # 遇到 `yield` 返回, 再次执行时从 yield 开始执行
+    return 'The iteration is over'
+
+def kYanghuiTriangle(k):
+    L = [1]
+    while k > 0:
+        yield(L)
+        T = L[:]    
+        T.append(0)
+        L = [T[i - 1] + T[i] for i in range(len(T))]    # minus index...
+        k -= 1
+    return 'The iteration is over'
 
 ```
 </details>       
+
+<details> <summary> map, reduce, lambda  </summary>
+
+```python
+from functools import reduce
+
+DIGITS = {0:'0', 1:'1', 2:'2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7', 8:'8', 9:'9'}
+
+def kInt2str(num):
+    def int2list(n):
+        L = []
+        while n > 0:
+            L.insert(0, n % 10)
+            n //= 10
+        return L
+    def digit2char(i):
+        return DIGITS[i]
+    def addChar(x, y):
+        return x + y
+    return reduce(addChar, map(digit2char, int2list(num)))
+
+CHARS = {v : k for k, v in DIGITS.items()}
+
+def kStr2int(s):
+    def char2digit(c):
+        return CHARS[c]
+    def bitSum(x, y):
+        return x * 10 + y
+    return reduce(bitSum, map(char2digit, s))
+
+def kStr2intLambda(s):
+    return reduce( lambda x, y : x * 10 + y, map(lambda c : CHARS[c], s))
+```
+</details>
 
 <details> <summary> 迭代器 Iterator  </summary>
 
@@ -342,6 +663,8 @@ isinstance(g, Iterator) # generator, yield, a data-stream like formula
 
 isinstance(iter([]), Iterator)
 isinstance(iter('abc'), Iterator)
+
+
 ```
 </details>
 
@@ -451,6 +774,11 @@ printDate(10)
 - 类内使用 `__` 开头的变量为 `private` 变量, `python` 会更改其名字, 在类外声明会添加新的变量
 - `__xxx__` 为特殊变量
 - `Duck type`不需要严格的继承体系, 只需要有同名方法
+
+- [ ] `super`
+- [ ] `property`
+- [ ] `setattr`, `hasattr`, `delattr`, `getattr`
+- [ ] `classmethod`, `staticmethod`
 
 ```Python
 class Character(object):
@@ -641,3 +969,8 @@ $ python -m unittest mydict_test
 Ran 5 tests in 0.000s
 
 OK
+
+## 文件操作
+
+- [ ] `open`
+- [ ] `file`
