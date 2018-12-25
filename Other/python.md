@@ -27,14 +27,13 @@ img:
 - [面向对象](#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1)
   - [类成员](#%E7%B1%BB%E6%88%90%E5%91%98)
   - [继承](#%E7%BB%A7%E6%89%BF)
-- [`types`](#types)
+- [模块](#%E6%A8%A1%E5%9D%97)
 - [错误处理](#%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86)
   - [异常](#%E5%BC%82%E5%B8%B8)
-  - [`assert`](#assert)
-  - [`logging`](#logging)
-  - [test](#test)
-- [.....](#)
-- [文件操作](#%E6%96%87%E4%BB%B6%E6%93%8D%E4%BD%9C)
+
+
+- [ ] 手动处理带 `__del__` 的循环引用 
+- [ ] 常用模块 `copy`, `types`, `os`, `random`, `re`, `gc`
 
 
 
@@ -260,6 +259,8 @@ print(v)
 - 正向索引从 `0` 开始, 负向索引从 `-1` 开始
 - 相邻字符串会自动连接到一起, 不能连接表达式
 
+<details> <summary> 字符串 </summary>
+
 ```python
 # 三引号跨行输入
 s = ''' 
@@ -273,8 +274,9 @@ s2[a:b] # [a:b) slice
 len(s) 
 
 print("{1} {0} {1}".format("foo", "bar")) # >>> bar foo bar
-
 ```
+</details>
+
 
 - 单独用索引会有 `out of range` 错误, 用 `slice` 则不会
 - 索引正负可混用, 只输出迭代器包围的部分, 迭代器大小不正确则不输出
@@ -288,10 +290,9 @@ print("{1} {0} {1}".format("foo", "bar")) # >>> bar foo bar
 有序表, 可以放入任意类型 (可嵌套), `append`, `insert`, `pop`
 - `list` 的 `append` 方法可改变外部全局变量的值
 
+<details> <summary> list comprehensions </summary>
 
 ```python
-
-# list comprehensions
 import os
 print([name for name in os.listdir('.')])
 
@@ -300,6 +301,8 @@ print([m + str(n) for m in 'ABC' for n in range(3)])
 L = [(x,y,z) for x in range(1,30) for y in range(x,30) for z in range(y,30) if x**2 + y**2 == z**2]
 L2 = [e.lower() for e in L if isinstance(e, str)]
 ```
+</details>
+
 
 ### 元组 `tuple`
 - 不可变 (类似于单层 `const`)
@@ -893,6 +896,17 @@ class Date(object):
 
 d = Date.create_from_str('24-12-2018')
 
+
+
+# 方法与函数的区别
+class Test(object):
+    def test_print(self):
+        print(i)
+
+print(Test.test_print)  # >>> function
+a = Test()
+print(a.test_print) # >>> bound method
+
 ```
 </details>
 
@@ -975,6 +989,30 @@ class Chain(object):
     __repr__ = __str__
 
 print(Chain().users.friend.foo.bar)
+
+# hasattr, getattr, setattr
+from types import MethodType
+if not hasattr(obj, 'name'):
+    setattr(obj, 'name', 'Link')
+print(getattr(obj, 'skill')) # AttributeError
+print(getattr(obj, 'Website', 404)) # Default return value
+
+def readImage(fp):
+    if hasatte(fp, 'read'):
+        return readData(fp)
+    return None
+
+# Create dynamic type
+def fn(self, name = 'Hell'):
+    print('Hello ', name)
+
+
+test = type('Hello', (object, ), {'hello' : fn})
+
+print(type(test)) # type
+
+h = test()
+
 ```
 </details>
 
@@ -989,8 +1027,7 @@ print(Chain().users.friend.foo.bar)
 - `__getitem__`, `__setitem__`, `__delitem__` 用于索引操作, 获取, 赋值, 删除
 - `__getslice__`, `__setslice__`, `__delslice__` 用于切片操作
 - `__iter__` : 返回 `iterabale`, 用于迭代
-- `__new__`, `__metaclass`__ : 
-- 
+- `__new__`, `__metaclass`__ : 用于动态创建类
 
 <details> <summary> 特殊成员 </summary>
 
@@ -1052,47 +1089,88 @@ print(D.__mro__) # o
 ```
 </details>
 
-## `types`
+
+## 模块
+
+`import` :
+1. `.py` 文件
+2. 编译好的共享库或 DLL 的 C/C++ 扩展
+3. 包
+4. 使用 C 编写并链接到 `python` 解释器的模块
+
+`import foo` 的查找过程, 解释器在 `sys.path` 包含的路径下搜索以下文件
+1. 目录 `foo` 
+2. `foo.pyd`, `foo.so`, `foomodule.so`, `foomodule.dll` (已编译好的扩展) 
+3. `foo.pyo` (使用 `-O` 或 `-OO` 选项时)
+4. `foo.pyc`
+5. `foo.py`, `foo.pyw` (on Windows)
+
+> 模块可以循环引用, 尽量避免
 
 
+<details> <summary> import </summary>
 
+```python
+import xxx
+import x, y, z
+import xxx as anotherName
+from xxx import yyy
 
-```Python
+if format == 'xml':
+    import xml_reader as reader
+elif format == 'csv':
+    import csv_reader as reader
 
-from types import MethodType
+data = reader.read(file)
 
-
-if not hasattr(obj, 'name'):
-    setattr(obj, 'name', 'Link')
-print(getattr(obj, 'skill')) # AttributeError
-print(getattr(obj, 'Website', 404)) # Default return value
-
-def readImage(fp):
-    if hasatte(fp, 'read'):
-        return readData(fp)
-    return None
 ```
+</details>
 
-```Python
-# Create dynamic type
-
-def fn(self, name = 'Hell'):
-    print('Hello ', name)
-
-
-test = type('Hello', (object, ), {'hello' : fn})
-
-print(type(test)) # type
-
-h = test()
-h.hello()
-
-```
 
 ## 错误处理
 
 
 ### 异常
+
+- `StopIteration` : 停止迭代
+- `AssertionError` : `assert` 引发
+- `AttributeError` : 属性名无效
+- `IOError`
+- `TypeError` 
+- `ValueError`
+- `ZeroDivisionError`
+
+<details> <summary> 异常 </summary>
+
+```python
+# raise RuntimeError("Unrecoverable Error")
+
+try:
+    pass
+except IOError as e:
+    print(e)
+
+try:
+    pass
+except Exception as e: # all kinds of exception
+    print(e)
+
+
+try:
+    pass
+except (IOError, TypeError, NameError) as e: # multiple exception
+    print(e)
+else:
+    pass # excute if there don't raise exceptions
+finally:
+    pass # excute with or without exception raised
+
+try:
+    r = 10 / 0
+except ZeroDivisionError as e:
+    logging.exception(e)
+    raise 
+    # raise ValueError('Zero value')
 
 g = kFibG(1)
 while True:
@@ -1103,17 +1181,21 @@ while True:
         print('Generator return value', e.value)
         break
 
-- `TypeError`
-- `ValueError`
-- `StopIteration`
-- `AttributeError`
-- `ZeroDivisionError`
-- `AssertionError`
-- `IOError`
+# definite a new kind of exception
+class NewError(Exception) : pass 
+```
 
 
 
-```Python
+</details>
+
+
+
+<details> <summary> 其他错误处理方式 </summary>
+
+```python
+
+# logging
 import logging
 
 try:
@@ -1129,44 +1211,15 @@ finally: # doing with or without exception throwed
     pass
 print('END')
 
-
-try:
-    r = 10 / 0
-except ZeroDivisionError as e:
-    logging.exception(e)
-    raise 
-    # raise ValueError('Zero value')
-```
-
-
-### `assert`
-
-assert type(s) == int, 'not a int'
-python -O err.py
-
-### `logging`
-
-```python
-import logging
-
 n = 0
 
 logging.info('n = %d' % n) # Get exception name
 
 logging.basicConfig(level=logging.INFO) # Get exception call stack, there are 4 levels in logging : debug, info, warning, error
 
+# assert
+assert type(s) == int, 'not a int' # python -O err.py
+
+
 ```
-
-### test
-
-$ python -m unittest mydict_test
-.....
-----------------------------------------------------------------------
-Ran 5 tests in 0.000s
-
-OK
-
-## 文件操作
-
-- [ ] `open`
-- [ ] `file`
+</details>
