@@ -1,21 +1,21 @@
 var points = [];
 var colors = [];
 const size = 10;
+
 function setup() {
     createCanvas(700, 500);
     background(48);
-    for(let i = 0; i < 5; ++i) {
+     for(let i = 0; i < 5; ++i) {
         points[i] = createVector(width / 2, height / 2);
         colors[i] = color(random(150, 250), random(150, 250), random(150, 250));
     }
 }
 
-function draw() {
-    
+function draw() {    
     for(let i = 0; i < points.length; ++i) {
         fill(colors[i]);
         stroke(colors[i]);        
-        randomMove9dir(points[i]);
+        randomMove4dir(points[i]);
         // point(points[i].x, points[i].y);
         ellipse(points[i].x, points[i].y, size);
     }
@@ -37,7 +37,7 @@ function randomMove4dir(p) {
     
 }
 
-function randomMove9dir() {
+function randomMove9dir(p) {
 
     let k = random(0, 1) * 8;
     let step = size / 2;
