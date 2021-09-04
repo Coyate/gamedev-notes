@@ -1,0 +1,2 @@
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=D:\Prototype\Github\gamedev-notes\Playground\Rust\hello-rust\target\debug\build\typenum-2571bee627b3171c\out\consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=D:\Prototype\Github\gamedev-notes\Playground\Rust\hello-rust\target\debug\build\typenum-2571bee627b3171c\out\op.rs
