@@ -1,6 +1,11 @@
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
 
 [package]
-name = "hello-rust"
+name = "hello_rust"
 version = "0.1.0"
 edition = "2018"
 

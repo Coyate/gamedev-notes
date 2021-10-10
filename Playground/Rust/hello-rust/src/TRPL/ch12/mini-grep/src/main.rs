@@ -6,7 +6,7 @@ use mini_grep::Config;
 fn main() {
     
     let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
-    let conf = Config::new(env::args().collect(), case_sensitive)
+    let conf = Config::new(env::args(), case_sensitive)
                             .unwrap_or_else(|err| {
                                 eprintln!("Error on loading : {}", err);
                                 process::exit(1);
