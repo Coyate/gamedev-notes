@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug with args",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=mini-grep",
+                    "--package=mini-grep"
+                ],
+                "filter": {
+                    "name": "mini-grep",
+                    "kind": "bin"
+                }
+            },
+            // "args": ["body", "D:/Project/Github/gamedev-notes/Playground/Rust/mini-grep/poem.txt"],
+            "args": ["body", "poem.txt"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Output with args",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=mini-grep",
+                    "--package=mini-grep"                    
+                ],
+                "filter": {
+                    "name": "mini-grep",
+                    "kind": "bin"
+                }
+            },
+            // "args": ["body", "D:/Project/Github/gamedev-notes/Playground/Rust/mini-grep/poem.txt"],
+            "args": ["body", "poem.txt", ">", "output.txt"],
+            "cwd": "${workspaceFolder}"
+        },
+    ]
+}
