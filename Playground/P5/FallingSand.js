@@ -11,7 +11,6 @@ const Material = {
 let PixelWidth = 64;
 let PixelHeight = 64;
 let ScreenPixel = [];
-let ActivePixel = [];
 
 
 
@@ -21,7 +20,7 @@ function setup() {
   for (let x = 0; x < PixelWidth; x++) {
     ScreenPixel[x] = [];      
     for (let y = 0; y < PixelHeight; y++) {
-        ScreenPixel[x][y] = Material.Void;
+      ScreenPixel[x][y] = Material.Void;
     }
   }  
   for (let x = 0; x < PixelWidth; x++) {  
@@ -69,7 +68,13 @@ function Simulation () {
     // for (let y = 1; y < PixelHeight - 1; y++) {        
     for (let y = PixelHeight - 2; y > 0; y -= 1) {        
         material = ScreenPixel[x][y];
-        
+        if (material == Material.Sand) {
+          Sand(x, y);
+        } else if (material == Material.Water) {
+          Water(x, y);
+        } else if (material == Material.Gas) {
+          Gas(x, y);
+        }               
     }
   }  
 }
@@ -85,94 +90,57 @@ function mouseMoved() {
   }    
 }
 
-class Pixel {
-  constructor(x, y, material) {
-    this.pos = createVector(x, y)    
-    this.material = material
-    this.active = true;    
-  }
-  
-  update() {
-    if (this.material == Material.Sand) {
-        this.sand();
-    } else if (this.material == Material.Water) {
-        this.water();
-    } else if (this.material == Material.Gas) {
-        this.gas(x, y);
-    }               
+
+
+
+
+function Sand(x, y) {
+  if (ScreenPixel[x][y + 1] == Material.Void) {
+    ScreenPixel[x][y + 1] = Material.Sand;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x - 1][y + 1] == Material.Void) {
+    ScreenPixel[x - 1][y + 1] = Material.Sand;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x + 1][y + 1] == Material.Void) {
+    ScreenPixel[x + 1][y + 1] = Material.Sand;
+    ScreenPixel[x][y] = Material.Void
   }  
+}
 
-  draw() {
-    if (this.material == Material.Sand) {
-      fill(240, 200, random(50, 150));
-      rect(x * 10, y * 10, 10, 10);
-    } else if (this.material == Material.Water) {
-      fill(0, 100, 255); 
-      rect(x * 10, y * 10, 10, 10);
-    } else if (this.material == Material.Gas) {
-      fill(140, 140, 140); 
-      rect(x * 10, y * 10, 10, 10);
-    }                
-  }
-  
+function Water(x, y) {
+  if (ScreenPixel[x][y + 1] == Material.Void) {
+    ScreenPixel[x][y + 1] = Material.Water;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x - 1][y + 1] == Material.Void) {
+    ScreenPixel[x - 1][y + 1] = Material.Water;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x + 1][y + 1] == Material.Void) {
+    ScreenPixel[x + 1][y + 1] = Material.Water;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x - 1][y] == Material.Void) {
+    ScreenPixel[x - 1][y] = Material.Water;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x + 1][y] == Material.Void) {
+    ScreenPixel[x + 1][y] = Material.Water;
+    ScreenPixel[x][y] = Material.Void
+  }  
+}
 
-  sand() {
-    let x = this.pos.y;
-    let y = this.pos.x;
-    if (ScreenPixel[x][y + 1] == Material.Void) {
-      ScreenPixel[x][y + 1] = Material.Sand;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x - 1][y + 1] == Material.Void) {
-      ScreenPixel[x - 1][y + 1] = Material.Sand;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x + 1][y + 1] == Material.Void) {
-      ScreenPixel[x + 1][y + 1] = Material.Sand;
-      ScreenPixel[x][y] = Material.Void
-    }  
-  }
-  
-  water() {
-    let x = this.pos.y;
-    let y = this.pos.x;
-    if (ScreenPixel[x][y + 1] == Material.Void) {
-      ScreenPixel[x][y + 1] = Material.Water;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x - 1][y + 1] == Material.Void) {
-      ScreenPixel[x - 1][y + 1] = Material.Water;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x + 1][y + 1] == Material.Void) {
-      ScreenPixel[x + 1][y + 1] = Material.Water;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x - 1][y] == Material.Void) {
-      ScreenPixel[x - 1][y] = Material.Water;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x + 1][y] == Material.Void) {
-      ScreenPixel[x + 1][y] = Material.Water;
-      ScreenPixel[x][y] = Material.Void
-    }  
-  }
-  
-  gas() {
-    let x = this.pos.y;
-    let y = this.pos.x;
-
-    if (ScreenPixel[x][y - 1] == Material.Void) {
-      ScreenPixel[x][y - 1] = Material.Gas;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x - 1][y - 1] == Material.Void) {
-      ScreenPixel[x - 1][y - 1] = Material.Gas;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x + 1][y - 1] == Material.Void) {
-      ScreenPixel[x + 1][y - 1] = Material.Gas;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x - 1][y - 1] == Material.Void) {
-      ScreenPixel[x - 1][y - 1] = Material.Gas;
-      ScreenPixel[x][y] = Material.Void
-    } else if (ScreenPixel[x + 1][y - 1] == Material.Void) {
-      ScreenPixel[x + 1][y - 1] = Material.Gas;
-      ScreenPixel[x][y] = Material.Void
-    }  
-
-    }
-
+function Gas(x, y) {
+  if (ScreenPixel[x][y - 1] == Material.Void) {
+    ScreenPixel[x][y - 1] = Material.Gas;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x - 1][y - 1] == Material.Void) {
+    ScreenPixel[x - 1][y - 1] = Material.Gas;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x + 1][y - 1] == Material.Void) {
+    ScreenPixel[x + 1][y - 1] = Material.Gas;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x - 1][y - 1] == Material.Void) {
+    ScreenPixel[x - 1][y - 1] = Material.Gas;
+    ScreenPixel[x][y] = Material.Void
+  } else if (ScreenPixel[x + 1][y - 1] == Material.Void) {
+    ScreenPixel[x + 1][y - 1] = Material.Gas;
+    ScreenPixel[x][y] = Material.Void
+  }  
 }
